@@ -35,6 +35,17 @@
 #include <Adafruit_SSD1306.h>
 #include <ArduinoJson.h>
 #include <WiFi.h>
+
+// ===== WEB SERVER UPLOAD & DOWNLOAD SIZE LIMITS =====
+// MUST be defined BEFORE #include <WebServer.h>
+// Increase limits to support larger file uploads/downloads (100KB+)
+#define HTTP_UPLOAD_BUFLEN 8192        // Upload buffer per chunk: 8KB (default 2KB)
+#define HTTP_DOWNLOAD_UNIT_SIZE 8192   // Download/stream buffer: 8KB (default 1436 bytes)
+#define HTTP_MAX_DATA_WAIT 10000       // Max wait for upload data: 10 sec
+#define HTTP_MAX_POST_WAIT 10000       // Max wait for POST: 10 sec
+#define HTTP_MAX_SEND_WAIT 10000       // Max wait for send: 10 sec
+#define HTTP_MAX_CLOSE_WAIT 2000       // Max wait for close: 2 sec
+
 #include <WebServer.h>
 #include <MPU9250.h>
 #include <esp_task_wdt.h>  // Watchdog timer
