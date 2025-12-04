@@ -939,30 +939,105 @@ void flushLogsToSD() {
 }
 
 // Get recent logs as JSON (for dashboard)
-String getRecentLogsJSON(int count) {
-  if (count > LOG_BUFFER_SIZE) count = LOG_BUFFER_SIZE;
-  if (count > logCount) count = logCount;
-
-  StaticJsonDocument<4096> doc;
+// If source="file", read from SD card; otherwise read from RAM buffer
+String getRecentLogsJSON(int count, String source = "buffer") {
+  StaticJsonDocument<8192> doc;  // Larger buffer for file reads
   JsonArray logs = doc.createNestedArray("logs");
 
-  // Read from ring buffer (most recent first)
-  int startIdx = (logWriteIndex - count + LOG_BUFFER_SIZE) % LOG_BUFFER_SIZE;
-  for (int i = 0; i < count; i++) {
-    int idx = (startIdx + i) % LOG_BUFFER_SIZE;
-    LogEntry* entry = &logBuffer[idx];
+  if (source == "file") {
+    // Read from SD card log file
+    if (xSemaphoreTake(sdMutex, pdMS_TO_TICKS(1000)) == pdTRUE) {
+      if (SD.exists(LOG_FILE_PATH)) {
+        File logFile = SD.open(LOG_FILE_PATH, FILE_READ);
+        if (logFile) {
+          // Count total lines first
+          int totalLines = 0;
+          while (logFile.available()) {
+            logFile.readStringUntil('\n');
+            totalLines++;
+          }
+          logFile.close();
 
-    JsonObject log = logs.createNestedObject();
-    log["timestamp"] = entry->timestamp;
-    log["level"] = entry->level;
-    log["message"] = entry->message;
-    log["rpm"] = entry->rpm;
-    log["voltage"] = entry->voltage;
+          // Read last N lines
+          logFile = SD.open(LOG_FILE_PATH, FILE_READ);
+          int skipLines = (totalLines > count) ? (totalLines - count) : 0;
+          int lineNum = 0;
+
+          while (logFile.available() && logs.size() < count) {
+            String line = logFile.readStringUntil('\n');
+            lineNum++;
+
+            if (lineNum <= skipLines) continue;  // Skip old lines
+
+            // Parse log line: [timestamp] [LEVEL] [RPM] [voltage] message
+            if (line.startsWith("[")) {
+              JsonObject log = logs.createNestedObject();
+
+              int pos1 = line.indexOf(']');
+              int pos2 = line.indexOf('[', pos1);
+              int pos3 = line.indexOf(']', pos2);
+              int pos4 = line.indexOf('[', pos3);
+              int pos5 = line.indexOf(']', pos4);
+              int pos6 = line.indexOf('[', pos5);
+              int pos7 = line.indexOf(']', pos6);
+
+              if (pos1 > 0 && pos3 > 0) {
+                String tsStr = line.substring(1, pos1);
+                String levelStr = line.substring(pos2 + 1, pos3);
+                String rpmStr = line.substring(pos4 + 1, pos5);
+                String voltStr = line.substring(pos6 + 1, pos7);
+                String message = line.substring(pos7 + 2);  // Skip "] "
+
+                log["timestamp"] = tsStr.toInt();
+
+                // Parse level
+                int level = 1;  // Default INFO
+                if (levelStr == "DEBUG") level = 0;
+                else if (levelStr == "INFO") level = 1;
+                else if (levelStr == "WARN") level = 2;
+                else if (levelStr == "ERROR") level = 3;
+                log["level"] = level;
+
+                // Parse RPM (remove " RPM" suffix)
+                rpmStr.replace(" RPM", "");
+                log["rpm"] = rpmStr.toInt();
+
+                // Parse voltage (remove "V" suffix)
+                voltStr.replace("V", "");
+                log["voltage"] = voltStr.toFloat();
+
+                log["message"] = message;
+              }
+            }
+          }
+          logFile.close();
+        }
+      }
+      xSemaphoreGive(sdMutex);
+    }
+  } else {
+    // Read from RAM ring buffer
+    if (count > LOG_BUFFER_SIZE) count = LOG_BUFFER_SIZE;
+    if (count > logCount) count = logCount;
+
+    int startIdx = (logWriteIndex - count + LOG_BUFFER_SIZE) % LOG_BUFFER_SIZE;
+    for (int i = 0; i < count; i++) {
+      int idx = (startIdx + i) % LOG_BUFFER_SIZE;
+      LogEntry* entry = &logBuffer[idx];
+
+      JsonObject log = logs.createNestedObject();
+      log["timestamp"] = entry->timestamp;
+      log["level"] = entry->level;
+      log["message"] = entry->message;
+      log["rpm"] = entry->rpm;
+      log["voltage"] = entry->voltage;
+    }
   }
 
   doc["totalLogs"] = totalLogsWritten;
   doc["logsDropped"] = logsDropped;
   doc["bufferUsed"] = logCount;
+  doc["source"] = source;
 
   String output;
   serializeJson(doc, output);
@@ -1811,10 +1886,19 @@ void setupWebServer() {
     int count = 50;  // Default: last 50 logs
     if (server.hasArg("count")) {
       count = server.arg("count").toInt();
-      if (count > 100) count = 100;  // Max 100 logs
+      if (count > 500) count = 500;  // Max 500 logs from file
     }
 
-    String response = getRecentLogsJSON(count);
+    // Check source parameter: "buffer" (RAM) or "file" (SD card)
+    String source = "buffer";
+    if (server.hasArg("source")) {
+      source = server.arg("source");
+      if (source != "buffer" && source != "file") {
+        source = "buffer";  // Default to buffer if invalid
+      }
+    }
+
+    String response = getRecentLogsJSON(count, source);
     server.send(200, "application/json", response);
   });
 

@@ -1689,12 +1689,31 @@ closeModal();
 let allLogs = [];
 let autoRefreshLogsEnabled = false;
 let logsRefreshInterval = null;
+let logSource = 'buffer';  // 'buffer' or 'file'
+
+// Toggle between live RAM buffer and historical SD card file
+function toggleLogSource() {
+  logSource = (logSource === 'buffer') ? 'file' : 'buffer';
+  const btn = document.getElementById('log-source-btn');
+  if (logSource === 'file') {
+    btn.textContent = '💾 Source: SD Card History';
+    btn.classList.add('active');
+    // Disable auto-refresh for file mode (too slow)
+    if (autoRefreshLogsEnabled) {
+      toggleAutoRefreshLogs();
+    }
+  } else {
+    btn.textContent = '📂 Source: Live RAM';
+    btn.classList.remove('active');
+  }
+  refreshLogs();
+}
 
 // Fetch and display logs
 async function refreshLogs() {
   try {
     const count = document.getElementById('log-count').value;
-    const response = await fetch(`/api/logs?count=${count}`);
+    const response = await fetch(`/api/logs?count=${count}&source=${logSource}`);
     const data = await response.json();
 
     allLogs = data.logs || [];

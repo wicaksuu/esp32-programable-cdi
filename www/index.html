@@ -1227,6 +1227,9 @@
             <div class="section-header">
               <h2>📋 System Logs</h2>
               <div class="button-group">
+                <button class="btn btn-secondary" onclick="toggleLogSource()" id="log-source-btn">
+                  📂 Source: Live RAM
+                </button>
                 <button class="btn btn-secondary" onclick="toggleAutoRefreshLogs()">
                   <span id="auto-refresh-logs-btn">🔄 Auto-Refresh: OFF</span>
                 </button>
@@ -1256,6 +1259,8 @@
                 <option value="25">Last 25</option>
                 <option value="50" selected>Last 50</option>
                 <option value="100">Last 100</option>
+                <option value="200">Last 200 (File only)</option>
+                <option value="500">Last 500 (File only)</option>
               </select>
             </div>
 
