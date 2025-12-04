@@ -223,6 +223,11 @@ void runSimulatorScenario(String scenario) {
   Serial.printf("Running Scenario: %s\n", scenario.c_str());
   Serial.println("========================================");
 
+  // Log scenario execution
+  char logMsg[64];
+  snprintf(logMsg, sizeof(logMsg), "Test scenario: %s", scenario.c_str());
+  logMessage(LOG_INFO, logMsg);
+
   if (scenario == "idle") {
     // Test 1: Idle State - REALISTIC
     sim.virtualRPM = 1500;
@@ -449,6 +454,7 @@ void handleSimulatorAPI() {
       simulatorMode = true;
       simulatorRunning = false;
       Serial.println("✓ Simulator mode ENABLED");
+      logMessage(LOG_INFO, "Simulator mode ENABLED");
       server.send(200, "application/json", "{\"success\":true,\"message\":\"Simulator enabled\"}");
 
     } else if (action == "disable") {
@@ -456,6 +462,7 @@ void handleSimulatorAPI() {
       simulatorRunning = false;
       sim.autoRun = false;
       Serial.println("✓ Simulator mode DISABLED");
+      logMessage(LOG_INFO, "Simulator mode DISABLED");
       server.send(200, "application/json", "{\"success\":true,\"message\":\"Simulator disabled\"}");
 
     } else if (action == "start") {
@@ -469,8 +476,12 @@ void handleSimulatorAPI() {
       if (server.hasArg("rpm")) {
         sim.virtualRPM = server.arg("rpm").toInt();
         Serial.printf("✓ Simulator STARTED at %d RPM\n", sim.virtualRPM);
+        char msg[64];
+        snprintf(msg, sizeof(msg), "Simulator started @ %d RPM", sim.virtualRPM);
+        logMessage(LOG_INFO, msg);
       } else {
         Serial.println("✓ Simulator STARTED");
+        logMessage(LOG_INFO, "Simulator started");
       }
 
       server.send(200, "application/json", "{\"success\":true,\"message\":\"Simulator started\"}");
@@ -479,6 +490,7 @@ void handleSimulatorAPI() {
       simulatorRunning = false;
       sim.autoRun = false;
       sim.virtualRPM = 0;
+      logMessage(LOG_INFO, "Simulator stopped");
       Serial.println("✓ Simulator STOPPED");
       server.send(200, "application/json", "{\"success\":true,\"message\":\"Simulator stopped\"}");
 

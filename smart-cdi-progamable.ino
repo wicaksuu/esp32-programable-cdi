@@ -1265,6 +1265,7 @@ void loop() {
               emergencyShutdown = true;
               shutdownReason |= SHUTDOWN_SENSOR_FAIL;
               Serial.println("🔴 EMERGENCY: Sensor failure detected - SHUTDOWN");
+              logMessage(LOG_ERROR, "EMERGENCY: Sensor failure - SHUTDOWN");
             }
           }
         } else {
@@ -1349,6 +1350,9 @@ void loop() {
         emergencyShutdown = true;
         shutdownReason |= SHUTDOWN_LOW_VOLTAGE;
         Serial.printf("🔴 EMERGENCY: Low voltage %.1fV - SHUTDOWN\n", batteryVoltage);
+        char logMsg[64];
+        snprintf(logMsg, sizeof(logMsg), "EMERGENCY: Low voltage %.1fV", batteryVoltage);
+        logMessage(LOG_ERROR, logMsg);
       } else if (lowVoltageCounter == 1) {
         Serial.printf("⚠️ LOW VOLTAGE: %.1fV (threshold %.1fV)\n",
                      batteryVoltage, LOW_VOLTAGE_THRESHOLD);
@@ -1384,6 +1388,7 @@ void loop() {
         emergencyShutdown = true;
         shutdownReason |= SHUTDOWN_OVERHEAT;
         Serial.println("🔴 EMERGENCY: Coil overheat - SHUTDOWN");
+        logMessage(LOG_ERROR, "EMERGENCY: Coil overheat - SHUTDOWN");
       }
     } else if (coilOverheatProtection) {
       // Frequency back to normal, re-enable
@@ -1637,6 +1642,11 @@ bool setupWiFi() {
         display.print("IP: ");
         display.println(WiFi.localIP());
         display.display();
+
+        // Log WiFi connection
+        char logMsg[80];
+        snprintf(logMsg, sizeof(logMsg), "WiFi connected: %s", wifiSettings.networks[i].ssid);
+        logMessage(LOG_INFO, logMsg);
         break;
       } else {
         Serial.printf("\nFailed to connect to '%s'\n", wifiSettings.networks[i].ssid);
@@ -1657,6 +1667,11 @@ bool setupWiFi() {
     display.print("AP: ");
     display.println(IP);
     display.display();
+
+    // Log AP mode start
+    char logMsg[80];
+    snprintf(logMsg, sizeof(logMsg), "AP mode started: %s", wifiSettings.apSSID);
+    logMessage(LOG_INFO, logMsg);
 
     delay(1000);
     return true;  // AP mode is active
@@ -2157,6 +2172,11 @@ void setupRoutes() {
 
         server.send(200, "application/json", "{\"success\":true}");
         Serial.printf("Map switched to: %s (saved to SD)\n", mappings[index].name);
+
+        // Log map change
+        char logMsg[80];
+        snprintf(logMsg, sizeof(logMsg), "Map changed: %s (slot %d)", mappings[index].name, index);
+        logMessage(LOG_INFO, logMsg);
         return;
       }
     }
