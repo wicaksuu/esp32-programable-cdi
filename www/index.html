@@ -1,0 +1,1460 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Konfigurasi Smart CDI</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>🏍️ Smart CDI Programmer</h1>
+        <div class="status-bar">
+          <div class="status-item">
+            <span class="label">RPM:</span>
+            <span id="current-rpm" class="value">0</span>
+          </div>
+          <div class="status-item">
+            <span class="label">Speed:</span>
+            <span id="current-speed" class="value">0 km/h</span>
+          </div>
+          <div class="status-item">
+            <span class="label">Advance:</span>
+            <span id="current-advance" class="value">0°</span>
+          </div>
+          <div class="status-item">
+            <span class="label">QS:</span>
+            <span id="qs-status" class="value">OFF</span>
+          </div>
+          <div class="status-item">
+            <span class="label">LC:</span>
+            <span id="lc-status" class="value">OFF</span>
+          </div>
+          <div class="status-item">
+            <span class="label">AW:</span>
+            <span id="aw-status" class="value">OFF</span>
+          </div>
+          <div class="status-item">
+            <span class="label">TC:</span>
+            <span id="tc-status" class="value">OFF</span>
+          </div>
+          <div
+            class="status-item"
+            id="calibration-status-item"
+            style="display: none"
+          >
+            <span class="label">Kalibrasi:</span>
+            <span id="calibration-status" class="value">-</span>
+          </div>
+        </div>
+      </header>
+
+      <nav class="tabs">
+        <button class="tab-btn active" data-tab="maps">📋 Map</button>
+        <button class="tab-btn" data-tab="live">📊 Live</button>
+        <button class="tab-btn" data-tab="ignition">⚡ Igt</button>
+        <button class="tab-btn" data-tab="quickshifter">🚀 QS</button>
+        <button class="tab-btn" data-tab="launchcontrol">🏁 LC</button>
+        <button class="tab-btn" data-tab="awtc">🛡️ AW & TC</button>
+        <button class="tab-btn" data-tab="settings">⚙️ Setting</button>
+      </nav>
+
+      <main>
+        <!-- Maps Tab -->
+        <div class="tab-content active" id="maps-tab">
+          <div class="section">
+            <div class="section-header">
+              <h2>Map Tersedia</h2>
+              <button class="btn btn-primary" onclick="createNewMap()">
+                + Map Baru
+              </button>
+            </div>
+            <div id="maps-list" class="maps-grid">
+              <!-- Maps will be loaded here -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Live Monitor Tab -->
+        <div class="tab-content" id="live-tab">
+          <div class="section">
+            <h2>📊 Monitor Kendaraan Live</h2>
+
+            <!-- Engine Status -->
+            <h3>🏍️ Status Mesin</h3>
+            <div class="stats-grid">
+              <div
+                class="stat-card"
+                style="
+                  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                "
+              >
+                <div class="stat-label">RPM</div>
+                <div class="stat-value" id="live-rpm">0</div>
+              </div>
+              <div
+                class="stat-card"
+                style="
+                  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+                "
+              >
+                <div class="stat-label">Derajat Pengapian</div>
+                <div class="stat-value" id="live-advance">0°</div>
+              </div>
+              <div
+                class="stat-card"
+                style="
+                  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+                "
+              >
+                <div class="stat-label">Dwell Time</div>
+                <div class="stat-value" id="live-dwell">0 μs</div>
+              </div>
+              <div
+                class="stat-card"
+                style="
+                  background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+                "
+              >
+                <div class="stat-label">Map Aktif</div>
+                <div
+                  class="stat-value"
+                  id="live-map-name"
+                  style="font-size: 1.3em"
+                >
+                  -
+                </div>
+              </div>
+            </div>
+
+            <!-- Input Sensors -->
+            <h3>📡 Sensor Input & Status</h3>
+            <div class="stats-grid">
+              <div
+                class="stat-card"
+                style="
+                  background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+                  color: #2c3e50;
+                "
+              >
+                <div class="stat-label">Sensor Trigger (AC/DC)</div>
+                <div class="stat-value" id="live-trigger-sensor">-</div>
+                <div style="font-size: 0.8em; margin-top: 8px; opacity: 0.8">
+                  Tipe: <span id="live-trigger-type">-</span>
+                </div>
+              </div>
+              <div
+                class="stat-card"
+                style="
+                  background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+                  color: #2c3e50;
+                "
+              >
+                <div class="stat-label">Sensor Tekanan QS</div>
+                <div class="stat-value" id="live-qs-sensor">0</div>
+                <div style="font-size: 0.8em; margin-top: 8px; opacity: 0.8">
+                  Status: <span id="live-qs-sensor-status">-</span>
+                </div>
+              </div>
+              <div
+                class="stat-card"
+                style="
+                  background: linear-gradient(135deg, #d299c2 0%, #fef9d7 100%);
+                  color: #2c3e50;
+                "
+              >
+                <div class="stat-label">MPU9250 IMU Sensor</div>
+                <div class="stat-value" id="live-mpu-status">-</div>
+                <div style="font-size: 0.8em; margin-top: 8px; opacity: 0.8">
+                  Pitch: <span id="live-mpu-pitch">0.0°</span>
+                </div>
+              </div>
+              <div
+                class="stat-card"
+                style="
+                  background: linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%);
+                  color: white;
+                "
+              >
+                <div class="stat-label">Sensor Kopling</div>
+                <div class="stat-value" id="live-clutch-sensor">-</div>
+                <div style="font-size: 0.8em; margin-top: 8px; opacity: 0.9">
+                  Pin 39
+                </div>
+              </div>
+            </div>
+
+            <!-- Features Status -->
+            <h3>⚙️ Status Fitur</h3>
+            <div class="stats-grid">
+              <div class="stat-card" id="live-qs-card">
+                <div class="stat-label">Quick Shifter</div>
+                <div class="stat-value" id="live-qs-status">OFF</div>
+              </div>
+              <div class="stat-card" id="live-lc-card">
+                <div class="stat-label">Launch Control</div>
+                <div class="stat-value" id="live-lc-status">OFF</div>
+                <div style="font-size: 0.8em; margin-top: 10px; opacity: 0.8">
+                  Kopling: <span id="live-clutch">-</span> | Speed:
+                  <span id="live-lc-speed">0 km/h</span>
+                </div>
+              </div>
+              <div class="stat-card" id="live-aw-card">
+                <div class="stat-label">Anti-Wheelie</div>
+                <div class="stat-value" id="live-aw-status">OFF</div>
+                <div style="font-size: 0.9em; margin-top: 10px; opacity: 0.9">
+                  Pitch: <span id="live-pitch">0.0°</span>
+                </div>
+              </div>
+              <div class="stat-card" id="live-tc-card">
+                <div class="stat-label">Kontrol Traksi</div>
+                <div class="stat-value" id="live-tc-status">OFF</div>
+                <div style="font-size: 0.8em; margin-top: 10px; opacity: 0.8">
+                  Slip: <span id="live-slip">0.0%</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Wheel Speeds -->
+            <h3>🛞 Kecepatan Roda</h3>
+            <div class="stats-grid">
+              <div
+                class="stat-card"
+                style="
+                  background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+                "
+              >
+                <div class="stat-label">Roda Depan</div>
+                <div class="stat-value" id="live-front-wheel">0.0 km/h</div>
+              </div>
+              <div
+                class="stat-card"
+                style="
+                  background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);
+                "
+              >
+                <div class="stat-label">Roda Belakang</div>
+                <div class="stat-value" id="live-rear-wheel">0.0 km/h</div>
+              </div>
+            </div>
+
+            <!-- Rev Limiter -->
+            <h3>🚨 Pembatas RPM</h3>
+            <div class="stats-grid">
+              <div class="stat-card" id="live-revlimit-card">
+                <div class="stat-label">Pembatas RPM</div>
+                <div class="stat-value" id="live-revlimit-status">NONAKTIF</div>
+                <div style="font-size: 0.9em; margin-top: 10px; opacity: 0.9">
+                  Batas: <span id="live-revlimit-rpm">0</span> RPM
+                </div>
+              </div>
+              <div
+                class="stat-card"
+                style="
+                  background: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%);
+                  color: #2c3e50;
+                "
+              >
+                <div class="stat-label">Total Pengapian</div>
+                <div class="stat-value" id="live-total-ignitions">0</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Ignition Tab -->
+        <div class="tab-content" id="ignition-tab">
+          <div class="section">
+            <h2>Konfigurasi Timing Pengapian</h2>
+
+            <div
+              id="active-map-notice"
+              class="info-box"
+              style="
+                display: none;
+                background: #d4edda;
+                border-left: 4px solid #28a745;
+              "
+            >
+              <p><strong>✓ Mengedit Map AKTIF</strong></p>
+              <p>
+                Perubahan akan diterapkan segera saat Anda menyimpan (hot
+                reload).
+              </p>
+            </div>
+
+            <div
+              id="inactive-map-notice"
+              class="info-box"
+              style="
+                display: none;
+                background: #fff3cd;
+                border-left: 4px solid #ffc107;
+              "
+            >
+              <p><strong>⚠️ Mengedit Map TIDAK AKTIF</strong></p>
+              <p>
+                Map ini tidak sedang aktif. Perubahan akan tersimpan tetapi
+                tidak diterapkan sampai Anda beralih ke map ini.
+              </p>
+            </div>
+
+            <div class="form-group">
+              <label>Map Saat Ini:</label>
+              <select
+                id="edit-map-select"
+                onchange="syncAllMapSelectors(this.value)"
+              >
+                <!-- Options loaded dynamically -->
+              </select>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Tipe Mesin:</label>
+                <select id="engine-type">
+                  <option value="0">2-Stroke (2-Tak)</option>
+                  <option value="1">4-Stroke (4-Tak)</option>
+                </select>
+                <small>2-Tak = ignition setiap revolusi, 4-Tak = setiap 2 revolusi</small>
+              </div>
+              <div class="form-group">
+                <label>Offset Sensor Pickup (°BTDC):</label>
+                <input
+                  type="number"
+                  id="pickup-sensor-offset"
+                  min="0"
+                  max="30"
+                  step="1"
+                  value="0"
+                />
+                <small>Sudut posisi sensor pickup. 0° = sensor di TDC. Kalibrasi dengan timing light!</small>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Dwell Time (μs):</label>
+                <input
+                  type="number"
+                  id="dwell-time"
+                  min="1000"
+                  max="5000"
+                  step="100"
+                />
+              </div>
+              <div class="form-group">
+                <label>Pembatas RPM (RPM):</label>
+                <input
+                  type="number"
+                  id="rev-limiter"
+                  min="0"
+                  max="20000"
+                  step="100"
+                />
+              </div>
+              <div class="form-group">
+                <label>Pembatas RPM Aktif:</label>
+                <input type="checkbox" id="rev-limiter-enabled" />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Pola Pemotongan Pembatas RPM:</label>
+                <select id="rev-limiter-cut-pattern">
+                  <option value="0">Hard Cut (100% cut - darurat)</option>
+                  <option value="1">Medium (50% cut - 1 dari 2)</option>
+                  <option value="2" selected>
+                    Soft (33% cut - 1 dari 3) - Direkomendasikan
+                  </option>
+                  <option value="3">Aggressive (66% cut - 2 dari 3)</option>
+                </select>
+                <small
+                  >Soft cut = maintain torsi/power saat limiter. Hard cut =
+                  darurat saja.</small
+                >
+              </div>
+            </div>
+
+            <h3>Kurva Derajat Pengapian</h3>
+            <div class="curve-editor">
+              <canvas
+                id="ignition-curve-canvas"
+                width="800"
+                height="400"
+              ></canvas>
+            </div>
+
+            <div class="table-container">
+              <table id="ignition-table">
+                <thead>
+                  <tr>
+                    <th>Titik</th>
+                    <th>RPM</th>
+                    <th>Derajat (°)</th>
+                    <th>Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="ignition-table-body">
+                  <!-- Dynamic rows based on pointCount -->
+                </tbody>
+              </table>
+            </div>
+
+            <div class="button-group">
+              <button class="btn btn-success" onclick="addIgnitionPoint()">
+                + Tambah Titik RPM
+              </button>
+              <button class="btn btn-primary" onclick="saveIgnitionConfig()">
+                💾 Simpan Perubahan
+              </button>
+              <button class="btn btn-secondary" onclick="resetToDefault()">
+                🔄 Reset ke Default
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Shifter Tab -->
+        <div class="tab-content" id="quickshifter-tab">
+          <div class="section">
+            <h2>Konfigurasi Quick Shifter</h2>
+
+            <div
+              id="qs-active-map-notice"
+              class="info-box"
+              style="
+                display: none;
+                background: #d4edda;
+                border-left: 4px solid #28a745;
+              "
+            >
+              <p><strong>✓ Mengedit Map AKTIF</strong></p>
+              <p>
+                Perubahan akan diterapkan segera saat Anda menyimpan (hot
+                reload).
+              </p>
+            </div>
+
+            <div
+              id="qs-inactive-map-notice"
+              class="info-box"
+              style="
+                display: none;
+                background: #fff3cd;
+                border-left: 4px solid #ffc107;
+              "
+            >
+              <p><strong>⚠️ Mengedit Map TIDAK AKTIF</strong></p>
+              <p>
+                Map ini tidak sedang aktif. Perubahan akan tersimpan tetapi
+                tidak diterapkan sampai Anda beralih ke map ini.
+              </p>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Quick Shifter Aktif:</label>
+                <input type="checkbox" id="qs-enabled" />
+              </div>
+            </div>
+
+            <h3>Kalibrasi Sensor (Otomatis)</h3>
+
+            <div class="calibration-box">
+              <p><strong>🎯 Mode Kalibrasi Otomatis</strong></p>
+              <p>
+                Sistem akan mendeteksi jenis sensor dan threshold secara
+                otomatis.
+              </p>
+              <button class="btn btn-primary" onclick="startQSCalibration()">
+                🔧 Mulai Kalibrasi Otomatis
+              </button>
+
+              <div
+                id="calibration-steps"
+                style="display: none; margin-top: 20px"
+              >
+                <div
+                  class="calibration-step"
+                  id="cal-step-1"
+                  style="display: none"
+                >
+                  <div class="step-indicator">Langkah 1/2</div>
+                  <h4>📍 Tekan Quick Shifter</h4>
+                  <p>Tekan dan tahan tuas/pedal quick shifter sekarang</p>
+                  <div class="sensor-reading">
+                    <span>Nilai Sensor: </span>
+                    <span id="cal-sensor-value-1" class="sensor-value">-</span>
+                  </div>
+                  <button class="btn btn-success" onclick="capturePressed()">
+                    ✓ Tangkap
+                  </button>
+                  <button
+                    class="btn btn-secondary"
+                    onclick="cancelCalibration()"
+                  >
+                    Batal
+                  </button>
+                </div>
+
+                <div
+                  class="calibration-step"
+                  id="cal-step-2"
+                  style="display: none"
+                >
+                  <div class="step-indicator">Langkah 2/2</div>
+                  <h4>🔓 Lepas Quick Shifter</h4>
+                  <p>Lepas quick shifter sepenuhnya sekarang</p>
+                  <div class="sensor-reading">
+                    <span>Nilai Sensor: </span>
+                    <span id="cal-sensor-value-2" class="sensor-value">-</span>
+                  </div>
+                  <button class="btn btn-success" onclick="captureReleased()">
+                    ✓ Tangkap & Selesai
+                  </button>
+                  <button
+                    class="btn btn-secondary"
+                    onclick="cancelCalibration()"
+                  >
+                    Batal
+                  </button>
+                </div>
+
+                <div
+                  class="calibration-step"
+                  id="cal-complete"
+                  style="display: none"
+                >
+                  <div class="step-indicator">✓ Selesai</div>
+                  <h4>🎉 Kalibrasi Selesai!</h4>
+                  <div class="cal-result">
+                    <p>
+                      Nilai Ditekan: <strong id="cal-result-pressed">-</strong>
+                    </p>
+                    <p>
+                      Nilai Dilepas: <strong id="cal-result-released">-</strong>
+                    </p>
+                    <p>
+                      Threshold: <strong id="cal-result-threshold">-</strong>
+                    </p>
+                    <p>
+                      Jenis Sensor: <strong id="cal-result-inverted">-</strong>
+                    </p>
+                  </div>
+                  <button class="btn btn-primary" onclick="closeCalibration()">
+                    Selesai
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <h3>Nilai Terkalibrasi (Hanya Baca)</h3>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Threshold Sensor (ADC):</label>
+                <input
+                  type="number"
+                  id="qs-sensor-threshold"
+                  readonly
+                  class="readonly-input"
+                  value="2048"
+                />
+                <small>Threshold terkalibrasi secara otomatis</small>
+              </div>
+              <div class="form-group">
+                <label>Jenis Sensor:</label>
+                <input
+                  type="text"
+                  id="qs-sensor-type"
+                  readonly
+                  class="readonly-input"
+                  value="Normal"
+                />
+                <small>Terdeteksi otomatis (Normal/Inverted)</small>
+              </div>
+            </div>
+
+            <h3>Rentang RPM</h3>
+            <div class="form-row">
+              <div class="form-group">
+                <label>RPM Minimum:</label>
+                <input
+                  type="number"
+                  id="qs-min-rpm"
+                  min="0"
+                  max="20000"
+                  step="100"
+                />
+              </div>
+              <div class="form-group">
+                <label>RPM Maksimum:</label>
+                <input
+                  type="number"
+                  id="qs-max-rpm"
+                  min="0"
+                  max="20000"
+                  step="100"
+                />
+              </div>
+            </div>
+
+            <h3>Kurva Kill Time Berdasarkan RPM</h3>
+            <div class="info-box">
+              <p>
+                <strong>Catatan:</strong> Quick shifter menggunakan kill time
+                berdasarkan RPM saat ini.
+              </p>
+              <p>
+                <strong>Tips:</strong> Waktu lebih pendek di RPM tinggi, lebih
+                panjang di RPM rendah.
+              </p>
+            </div>
+
+            <div class="table-container">
+              <table id="qs-table">
+                <thead>
+                  <tr>
+                    <th>Titik</th>
+                    <th>RPM</th>
+                    <th>Kill Time (ms)</th>
+                    <th>Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="qs-table-body">
+                  <!-- Dynamic rows based on pointCount -->
+                </tbody>
+              </table>
+            </div>
+
+            <div class="info-box">
+              <h4>ℹ️ Info Quick Shifter</h4>
+              <p>
+                <strong>Kill Time:</strong> Durasi pemotongan ignition saat
+                shifting (milidetik)
+              </p>
+              <p>
+                <strong>Waktu pendek:</strong> Shift lebih cepat, tapi bisa
+                false neutral atau shift kasar
+              </p>
+              <p>
+                <strong>Waktu panjang:</strong> Shift lebih halus, tapi
+                akselerasi lebih lambat
+              </p>
+              <p>
+                <strong>Range umum:</strong> 60-150ms (lebih pendek di RPM
+                tinggi)
+              </p>
+              <p>
+                <strong>Sensor Threshold:</strong> Nilai ADC (0-4095) untuk
+                trigger quick shift
+              </p>
+            </div>
+
+            <div class="button-group">
+              <button class="btn btn-success" onclick="addQSPoint()">
+                + Tambah Titik RPM
+              </button>
+              <button
+                class="btn btn-primary"
+                onclick="saveQuickShifterConfig()"
+              >
+                💾 Simpan Konfigurasi QS
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Launch Control Tab -->
+        <div class="tab-content" id="launchcontrol-tab">
+          <div class="section">
+            <h2>Konfigurasi Launch Control</h2>
+
+            <div
+              id="lc-active-map-notice"
+              class="info-box"
+              style="
+                display: none;
+                background: #d4edda;
+                border-left: 4px solid #28a745;
+              "
+            >
+              <p><strong>✓ Mengedit Map AKTIF</strong></p>
+              <p>
+                Perubahan akan diterapkan segera saat Anda menyimpan (hot
+                reload).
+              </p>
+            </div>
+
+            <div
+              id="lc-inactive-map-notice"
+              class="info-box"
+              style="
+                display: none;
+                background: #fff3cd;
+                border-left: 4px solid #ffc107;
+              "
+            >
+              <p><strong>⚠️ Mengedit Map TIDAK AKTIF</strong></p>
+              <p>
+                Map ini tidak sedang aktif. Perubahan akan tersimpan tetapi
+                tidak diterapkan sampai Anda beralih ke map ini.
+              </p>
+            </div>
+
+            <div class="form-group">
+              <label>Map Saat Ini:</label>
+              <select
+                id="lc-edit-map-select"
+                onchange="syncAllMapSelectors(this.value)"
+              >
+                <!-- Options loaded dynamically -->
+              </select>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Launch Control Aktif:</label>
+                <input type="checkbox" id="lc-enabled" />
+              </div>
+            </div>
+
+            <h3>Pengaturan Launch Control</h3>
+            <div class="form-row">
+              <div class="form-group">
+                <label>RPM Target:</label>
+                <input
+                  type="number"
+                  id="lc-target-rpm"
+                  min="3000"
+                  max="15000"
+                  step="100"
+                />
+                <small>RPM target untuk launch (mis. 6000-8000)</small>
+              </div>
+              <div class="form-group">
+                <label>Retard Timing (°):</label>
+                <input
+                  type="number"
+                  id="lc-retard-degrees"
+                  min="0"
+                  max="30"
+                  step="1"
+                />
+                <small>Berapa derajat timing di-retard saat LC aktif</small>
+              </div>
+              <div class="form-group">
+                <label>Pola Pemotongan:</label>
+                <select id="lc-cut-pattern">
+                  <option value="0">Hard Cut (100% cut)</option>
+                  <option value="1">Medium (50% cut - 1 dari 2)</option>
+                  <option value="2" selected>Soft (33% cut - 1 dari 3)</option>
+                  <option value="3">Aggressive (66% cut - 2 dari 3)</option>
+                </select>
+                <small>Pola pemotongan spark untuk maintain power</small>
+              </div>
+            </div>
+
+            <div class="info-box">
+              <h4>ℹ️ Info Launch Control</h4>
+              <p><strong>Hardware:</strong></p>
+              <ul style="margin-left: 20px">
+                <li>
+                  Sensor kopling di pin 39 (LOW = ditarik, HIGH = dilepas)
+                </li>
+                <li>Sensor roda depan (Hall effect) untuk deteksi kecepatan</li>
+              </ul>
+              <p>
+                <strong>🔒 Aktivasi Otomatis Berbasis Kecepatan:</strong> LC
+                aktif jika
+                <strong style="color: #e74c3c">SPEED < 5 km/h</strong> + kopling
+                ditarik + RPM ≥ RPM target
+              </p>
+              <p>
+                <strong style="color: #27ae60">✓ Aman:</strong> LC hanya aktif
+                saat kecepatan rendah (start/idle), tidak aktif saat jalan
+                normal
+              </p>
+              <p>
+                <strong>RPM Target:</strong> RPM yang akan di-maintain saat LC
+                aktif (6000-8000 biasanya optimal)
+              </p>
+              <p>
+                <strong>Retard Timing:</strong> Berapa derajat timing dikurangi
+                untuk kontrol power (5-15° direkomendasikan)
+              </p>
+              <p><strong>Pola Pemotongan:</strong></p>
+              <ul style="margin-left: 20px">
+                <li>
+                  <strong>Soft (default):</strong> Cut 1 dari 3 sparks -
+                  maintain power, smooth
+                </li>
+                <li><strong>Medium:</strong> Cut 1 dari 2 sparks - seimbang</li>
+                <li>
+                  <strong>Aggressive:</strong> Cut 2 dari 3 sparks - kontrol
+                  lebih kuat
+                </li>
+                <li><strong>Hard:</strong> Cut semua spark - darurat saja</li>
+              </ul>
+              <p><strong>Cara Pakai:</strong></p>
+              <ol style="margin-left: 20px">
+                <li>
+                  Pastikan motor dalam keadaan diam/start (speed < 5 km/h)
+                </li>
+                <li>Tarik kopling penuh</li>
+                <li>
+                  Gas sampai RPM target →
+                  <strong>LC AKTIF OTOMATIS</strong> (hold RPM)
+                </li>
+                <li>Lepas kopling untuk launch - power controlled</li>
+                <li>Setelah speed > 5 km/h, LC non-aktif otomatis</li>
+              </ol>
+            </div>
+
+            <div class="button-group">
+              <button
+                class="btn btn-primary"
+                onclick="saveLaunchControlConfig()"
+              >
+                💾 Simpan Konfigurasi LC
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Anti-Wheelie & Traction Control Tab -->
+        <div class="tab-content" id="awtc-tab">
+          <div class="section">
+            <h2>Konfigurasi Anti-Wheelie & Kontrol Traksi</h2>
+
+            <!-- Active/Inactive notices -->
+            <div
+              id="awtc-active-map-notice"
+              class="info-box"
+              style="
+                display: none;
+                background: #d4edda;
+                border-left: 4px solid #28a745;
+              "
+            >
+              <p><strong>✓ Mengedit Map AKTIF</strong></p>
+              <p>
+                Perubahan akan diterapkan segera saat Anda menyimpan (hot
+                reload).
+              </p>
+            </div>
+
+            <div
+              id="awtc-inactive-map-notice"
+              class="info-box"
+              style="
+                display: none;
+                background: #fff3cd;
+                border-left: 4px solid #ffc107;
+              "
+            >
+              <p><strong>⚠️ Mengedit Map TIDAK AKTIF</strong></p>
+              <p>
+                Perubahan akan tersimpan tetapi tidak diterapkan sampai Anda
+                beralih ke map ini.
+              </p>
+            </div>
+
+            <!-- Map selector -->
+            <div class="form-group">
+              <label>Map Saat Ini:</label>
+              <select
+                id="awtc-edit-map-select"
+                onchange="syncAllMapSelectors(this.value)"
+              ></select>
+            </div>
+
+            <!-- Anti-Wheelie Section -->
+            <h3>🛡️ Anti-Wheelie</h3>
+            <div class="info-box">
+              <h4>ℹ️ Info Anti-Wheelie</h4>
+              <p><strong>Hardware:</strong> MPU9250 9-Axis IMU Sensor (I2C)</p>
+              <p>
+                <strong>Cara Kerja:</strong> Mendeteksi saat sudut pitch motor
+                melebihi threshold (wheelie), lalu mengurangi power via retard
+                timing dan pemotongan spark.
+              </p>
+              <p>
+                <strong>Threshold Pitch:</strong> Derajat di atas baseline untuk
+                memicu intervensi (mis. 15° = roda depan 15° di atas level)
+              </p>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Anti-Wheelie Aktif:</label>
+                <input type="checkbox" id="aw-enabled" />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Threshold Pitch (derajat):</label>
+                <input
+                  type="number"
+                  id="aw-pitch-threshold"
+                  min="5"
+                  max="45"
+                  step="0.5"
+                  value="15.0"
+                />
+                <small
+                  >Berapa derajat di atas level sebelum intervensi (mis.
+                  15.0)</small
+                >
+              </div>
+              <div class="form-group">
+                <label>Retard Timing (°):</label>
+                <input
+                  type="number"
+                  id="aw-retard-degrees"
+                  min="0"
+                  max="20"
+                  step="1"
+                  value="5"
+                />
+                <small
+                  >Derajat untuk retard timing saat wheelie terdeteksi</small
+                >
+              </div>
+              <div class="form-group">
+                <label>Pola Pemotongan:</label>
+                <select id="aw-cut-pattern">
+                  <option value="0">Hard Cut (100% cut - darurat)</option>
+                  <option value="1">Medium (50% cut - 1 dari 2)</option>
+                  <option value="2" selected>
+                    Soft (33% cut - 1 dari 3) - Direkomendasikan
+                  </option>
+                  <option value="3">Aggressive (66% cut - 2 dari 3)</option>
+                </select>
+                <small
+                  >Pola pemotongan spark untuk pengurangan power yang
+                  smooth</small
+                >
+              </div>
+            </div>
+
+            <!-- Traction Control Section -->
+            <h3>🏍️ Kontrol Traksi</h3>
+            <div class="info-box">
+              <h4>ℹ️ Info Kontrol Traksi</h4>
+              <p>
+                <strong>Hardware:</strong> Sensor hall effect roda depan &
+                belakang (tipe magnetik)
+              </p>
+              <p>
+                <strong>Pin:</strong> Sensor roda depan = pin 22, Sensor roda
+                belakang = pin 14
+              </p>
+              <p>
+                <strong>Cara Kerja:</strong> Membandingkan kecepatan roda depan
+                vs belakang. Jika roda belakang berputar lebih cepat dari
+                threshold, mengurangi power.
+              </p>
+              <p>
+                <strong>Kalibrasi:</strong> Set jumlah magnet/lubang untuk
+                kalkulasi kecepatan yang akurat
+              </p>
+              <p>
+                <strong>Threshold Slip:</strong> mis. 0.15 = izinkan slip 15%
+                sebelum intervensi
+              </p>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Kontrol Traksi Aktif:</label>
+                <input type="checkbox" id="tc-enabled" />
+              </div>
+            </div>
+
+            <h4>Kalibrasi Sensor Roda</h4>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Magnet/Lubang Roda Depan:</label>
+                <input
+                  type="number"
+                  id="tc-front-wheel-holes"
+                  min="1"
+                  max="20"
+                  step="1"
+                  value="4"
+                />
+                <small>Jumlah magnet pada ring sensor roda depan</small>
+              </div>
+              <div class="form-group">
+                <label>Magnet/Lubang Roda Belakang:</label>
+                <input
+                  type="number"
+                  id="tc-rear-wheel-holes"
+                  min="1"
+                  max="20"
+                  step="1"
+                  value="4"
+                />
+                <small>Jumlah magnet pada ring sensor roda belakang</small>
+              </div>
+            </div>
+
+            <h4>🏍️ Konfigurasi Ukuran Ban & Velg</h4>
+            <div class="info-box" style="background: #e8f4f8">
+              <h4>ℹ️ Info Konfigurasi Ban</h4>
+              <p>
+                <strong>Penting!</strong> Setting ukuran ban yang akurat
+                diperlukan untuk kalkulasi kecepatan real yang presisi.
+              </p>
+              <p>
+                <strong>Format Ban:</strong> Contoh ban 70/80 berarti lebar
+                70mm, aspect ratio 80%
+              </p>
+              <p>
+                <strong>Diameter Velg:</strong> Dalam satuan inch (contoh: 14",
+                17")
+              </p>
+              <p><strong>Contoh Umum:</strong></p>
+              <ul style="margin-left: 20px">
+                <li>Depan: 70/80-17 atau 80/80-17</li>
+                <li>Belakang: 80/90-17 atau 90/80-17</li>
+              </ul>
+            </div>
+
+            <h5>Roda Depan</h5>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Lebar Ban Depan (mm):</label>
+                <input
+                  type="number"
+                  id="tc-front-tire-width"
+                  min="50"
+                  max="150"
+                  step="5"
+                  value="70"
+                  placeholder="70"
+                />
+                <small
+                  >Angka pertama dari ukuran ban (mis.
+                  <strong>70</strong>/80-17)</small
+                >
+              </div>
+              <div class="form-group">
+                <label>Aspect Ratio Depan (%):</label>
+                <input
+                  type="number"
+                  id="tc-front-tire-aspect"
+                  min="50"
+                  max="100"
+                  step="5"
+                  value="80"
+                  placeholder="80"
+                />
+                <small
+                  >Angka kedua dari ukuran ban (mis.
+                  70/<strong>80</strong>-17)</small
+                >
+              </div>
+              <div class="form-group">
+                <label>Diameter Velg Depan (inch):</label>
+                <input
+                  type="number"
+                  id="tc-front-wheel-diameter"
+                  min="10"
+                  max="21"
+                  step="1"
+                  value="17"
+                  placeholder="17"
+                />
+                <small
+                  >Ukuran velg dalam inch (mis.
+                  70/80-<strong>17</strong>)</small
+                >
+              </div>
+            </div>
+
+            <h5>Roda Belakang</h5>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Lebar Ban Belakang (mm):</label>
+                <input
+                  type="number"
+                  id="tc-rear-tire-width"
+                  min="50"
+                  max="200"
+                  step="5"
+                  value="80"
+                  placeholder="80"
+                />
+                <small
+                  >Angka pertama dari ukuran ban (mis.
+                  <strong>80</strong>/90-17)</small
+                >
+              </div>
+              <div class="form-group">
+                <label>Aspect Ratio Belakang (%):</label>
+                <input
+                  type="number"
+                  id="tc-rear-tire-aspect"
+                  min="50"
+                  max="100"
+                  step="5"
+                  value="90"
+                  placeholder="90"
+                />
+                <small
+                  >Angka kedua dari ukuran ban (mis.
+                  80/<strong>90</strong>-17)</small
+                >
+              </div>
+              <div class="form-group">
+                <label>Diameter Velg Belakang (inch):</label>
+                <input
+                  type="number"
+                  id="tc-rear-wheel-diameter"
+                  min="10"
+                  max="21"
+                  step="1"
+                  value="17"
+                  placeholder="17"
+                />
+                <small
+                  >Ukuran velg dalam inch (mis.
+                  80/90-<strong>17</strong>)</small
+                >
+              </div>
+            </div>
+
+            <div class="calibration-box" style="margin-top: 15px">
+              <p><strong>💡 Perhitungan Otomatis:</strong></p>
+              <p>
+                Keliling roda depan:
+                <strong><span id="front-circumference">-</span> meter</strong>
+              </p>
+              <p>
+                Keliling roda belakang:
+                <strong><span id="rear-circumference">-</span> meter</strong>
+              </p>
+            </div>
+
+            <h4>Pengaturan Kontrol Traksi</h4>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Threshold Slip (0-1):</label>
+                <input
+                  type="number"
+                  id="tc-slip-threshold"
+                  min="0.05"
+                  max="0.50"
+                  step="0.05"
+                  value="0.15"
+                />
+                <small
+                  >Izinkan slip sebanyak ini sebelum intervensi (0.15 = slip
+                  15%)</small
+                >
+              </div>
+              <div class="form-group">
+                <label>Retard Timing (°):</label>
+                <input
+                  type="number"
+                  id="tc-retard-degrees"
+                  min="0"
+                  max="20"
+                  step="1"
+                  value="5"
+                />
+                <small>Derajat untuk retard timing saat slip terdeteksi</small>
+              </div>
+              <div class="form-group">
+                <label>Pola Pemotongan:</label>
+                <select id="tc-cut-pattern">
+                  <option value="0">Hard Cut (100% cut - darurat)</option>
+                  <option value="1">Medium (50% cut - 1 dari 2)</option>
+                  <option value="2" selected>
+                    Soft (33% cut - 1 dari 3) - Direkomendasikan
+                  </option>
+                  <option value="3">Aggressive (66% cut - 2 dari 3)</option>
+                </select>
+                <small
+                  >Pola pemotongan spark untuk pengurangan power yang
+                  smooth</small
+                >
+              </div>
+            </div>
+
+            <!-- Live Status -->
+            <div
+              class="stats-grid"
+              id="awtc-live-stats"
+              style="margin-top: 30px"
+            >
+              <div class="stat-card">
+                <div class="stat-label">Pitch Saat Ini</div>
+                <div class="stat-value" id="live-current-pitch">0.0°</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">Kecepatan Roda Depan</div>
+                <div class="stat-value" id="live-front-speed">0 km/h</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">Kecepatan Roda Belakang</div>
+                <div class="stat-value" id="live-rear-speed">0 km/h</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">Rasio Slip</div>
+                <div class="stat-value" id="live-slip-ratio">0%</div>
+              </div>
+            </div>
+
+            <!-- Save Button -->
+            <div class="button-group" style="margin-top: 30px">
+              <button class="btn btn-primary" onclick="saveAWTCConfig()">
+                💾 Simpan Konfigurasi AW & TC
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Settings Tab -->
+        <div class="tab-content" id="settings-tab">
+          <div class="section">
+            <h2>Pengaturan Sistem</h2>
+
+            <div
+              id="settings-active-map-notice"
+              class="info-box"
+              style="
+                display: none;
+                background: #d4edda;
+                border-left: 4px solid #28a745;
+              "
+            >
+              <p><strong>✓ Mengedit Map AKTIF</strong></p>
+              <p>
+                Perubahan akan diterapkan segera saat Anda menyimpan (hot
+                reload).
+              </p>
+            </div>
+
+            <div
+              id="settings-inactive-map-notice"
+              class="info-box"
+              style="
+                display: none;
+                background: #fff3cd;
+                border-left: 4px solid #ffc107;
+              "
+            >
+              <p><strong>⚠️ Mengedit Map TIDAK AKTIF</strong></p>
+              <p>
+                Map ini tidak sedang aktif. Perubahan akan tersimpan tetapi
+                tidak diterapkan sampai Anda beralih ke map ini.
+              </p>
+            </div>
+
+            <div class="form-group">
+              <label>Nama Map:</label>
+              <input
+                type="text"
+                id="map-name"
+                placeholder="mis. Race, Eco, Rain"
+              />
+            </div>
+
+            <h3>Mode Input</h3>
+            <div class="form-group">
+              <label>
+                <input type="radio" name="input-mode" value="ac" /> Mode AC
+                (Koil Pengapian)
+              </label>
+              <label>
+                <input type="radio" name="input-mode" value="dc" /> Mode DC
+                (Pulsar)
+              </label>
+            </div>
+
+            <h3>Pengaturan Mode AC</h3>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Threshold Trigger:</label>
+                <input type="number" id="ac-threshold" min="0" max="4095" />
+              </div>
+              <div class="form-group">
+                <label>Balik Sinyal:</label>
+                <input type="checkbox" id="ac-invert" />
+              </div>
+            </div>
+
+            <h3>Pengaturan Mode DC</h3>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Pulsa per Revolusi:</label>
+                <input type="number" id="dc-pulses" min="1" max="60" />
+              </div>
+              <div class="form-group">
+                <label>Internal Pullup:</label>
+                <input type="checkbox" id="dc-pullup" />
+              </div>
+            </div>
+
+            <h3>Statistik</h3>
+            <div class="stats-grid">
+              <div class="stat-card">
+                <div class="stat-label">Total Pengapian</div>
+                <div class="stat-value" id="stat-ignitions">0</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">Map Aktif</div>
+                <div class="stat-value" id="stat-map">-</div>
+              </div>
+            </div>
+
+            <h3>Konektivitas</h3>
+            <div
+              class="info-box"
+              style="background: #e8f4f8; border-left: 4px solid #3498db"
+            >
+              <p><strong>📡 Pengaturan WiFi</strong></p>
+              <p>Kelola koneksi WiFi, scan network, dan konfigurasi AP mode.</p>
+              <div style="margin-top: 10px">
+                <a
+                  href="/wifi"
+                  class="btn btn-primary"
+                  style="display: inline-block; text-decoration: none"
+                  >📡 Buka WiFi Settings</a
+                >
+              </div>
+            </div>
+
+            <div
+              class="info-box"
+              style="background: #fff5e6; border-left: 4px solid #f39c12"
+            >
+              <p><strong>📤 File Manager</strong></p>
+              <p>
+                Upload, download, dan kelola file di SD card. Backup atau
+                restore konfigurasi mapping.
+              </p>
+              <div style="margin-top: 10px">
+                <a
+                  href="/upload"
+                  class="btn btn-primary"
+                  style="
+                    display: inline-block;
+                    text-decoration: none;
+                    background: linear-gradient(
+                      135deg,
+                      #f39c12 0%,
+                      #e67e22 100%
+                    );
+                  "
+                  >📤 Buka File Manager</a
+                >
+              </div>
+            </div>
+
+            <div
+              class="info-box"
+              style="background: #baa9ec; border-left: 4px solid #a184dc"
+            >
+              <p><strong>📊 Simulator</strong></p>
+              <p>Melakukan simulasi tanpa mesin, digunakan untuk dev only</p>
+              <div style="margin-top: 10px">
+                <a
+                  href="/simulator"
+                  class="btn btn-primary"
+                  style="
+                    display: inline-block;
+                    text-decoration: none;
+                    background: linear-gradient(
+                      135deg,
+                      #edb9f3 0%,
+                      #7304c2 100%
+                    );
+                  "
+                  >📊 Buka Simulator</a
+                >
+              </div>
+            </div>
+
+            <div
+              class="info-box"
+              style="background: #ffe6e6; border-left: 4px solid #e74c3c"
+            >
+              <p><strong>🔄 System Control</strong></p>
+              <p>
+                Restart perangkat untuk menerapkan perubahan WiFi atau reset
+                sistem.
+              </p>
+              <div style="margin-top: 10px">
+                <button class="btn btn-danger" onclick="restartDevice()">
+                  🔄 Restart Device
+                </button>
+              </div>
+            </div>
+
+            <div class="button-group">
+              <button class="btn btn-primary" onclick="saveSettings()">
+                💾 Simpan Pengaturan
+              </button>
+              <button
+                class="btn btn-danger"
+                onclick="if(confirm('Reset semua pengaturan?')) location.reload()"
+              >
+                ⚠️ Reset Pabrik
+              </button>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <footer>
+        <p>Smart CDI Programmable v2.0 | Multi-Map + Quick Shifter</p>
+      </footer>
+    </div>
+
+    <!-- Modal for Map Creation/Edit -->
+    <div id="modal" class="modal">
+      <div class="modal-content">
+        <span class="close" onclick="closeModal()">&times;</span>
+        <h2 id="modal-title">Buat Map Baru</h2>
+        <div class="form-group">
+          <label>Nama Map:</label>
+          <input type="text" id="new-map-name" placeholder="mis. Mode Race" />
+        </div>
+        <div class="form-group">
+          <label>Salin dari map yang ada:</label>
+          <select id="copy-from-map">
+            <option value="-1">Mulai dari default</option>
+          </select>
+        </div>
+        <div class="button-group">
+          <button class="btn btn-primary" onclick="confirmCreateMap()">
+            Buat
+          </button>
+          <button class="btn btn-secondary" onclick="closeModal()">
+            Batal
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ⚡ FIRMWARE SIGNATURE FOOTER ⚡ -->
+    <footer class="firmware-signature">
+      <div class="signature-content">
+        <span id="firmware-author">⚡ wicaksu</span>
+        <span class="separator">|</span>
+        <span id="firmware-version">v2.2</span>
+        <span class="separator">|</span>
+        <span id="firmware-copyright">© 2025</span>
+      </div>
+    </footer>
+
+    <script src="app.js"></script>
+  </body>
+</html>

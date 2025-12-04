@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart CDI - WiFi Settings</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+        h1 { color: #2c3e50; margin-bottom: 10px; }
+        .subtitle { color: #7f8c8d; margin-bottom: 30px; }
+        .section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .section h2 { color: #34495e; margin-bottom: 15px; font-size: 1.2em; }
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: transform 0.2s;
+            margin: 5px;
+        }
+        .btn:hover { transform: translateY(-2px); }
+        .btn:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .btn-scan { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); }
+        .btn-delete { background: #e74c3c; padding: 8px 15px; font-size: 0.9em; }
+        .btn-delete:hover { background: #c0392b; }
+        .network-item {
+            background: white;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+        .network-item:hover { background: #e8f4f8; }
+        .input-group {
+            margin-bottom: 15px;
+        }
+        .input-group label {
+            display: block;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+        .input-group input, .input-group select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #dfe6e9;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+        .saved-network {
+            background: white;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .saved-network.protected {
+            border: 2px solid #f1c40f;
+            background: #fffbea;
+        }
+        .protected-badge {
+            background: #f1c40f;
+            color: #2c3e50;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+        .status { padding: 15px; border-radius: 5px; margin: 15px 0; }
+        .status.success { background: #d4edda; color: #155724; }
+        .status.error { background: #f8d7da; color: #721c24; }
+        .status.info { background: #d1ecf1; color: #0c5460; }
+        .links { margin-top: 30px; text-align: center; }
+        .links a {
+            display: inline-block;
+            margin: 0 10px;
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .links a:hover { text-decoration: underline; }
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .checkbox-group input {
+            width: auto;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📡 WiFi Settings</h1>
+        <p class="subtitle">Configure WiFi networks and AP mode</p>
+
+        <div id="status"></div>
+
+        <!-- Scan WiFi Networks -->
+        <div class="section">
+            <h2>Available Networks</h2>
+            <button class="btn btn-scan" onclick="scanWiFi()">🔍 Scan WiFi Networks</button>
+            <div id="scanResults" style="margin-top: 15px;"></div>
+        </div>
+
+        <!-- Saved Networks -->
+        <div class="section">
+            <h2>Saved Networks (Max 5)</h2>
+            <div id="savedNetworks"></div>
+            <button class="btn" onclick="addNetwork()">➕ Add Network Manually</button>
+        </div>
+
+        <!-- AP Mode Settings -->
+        <div class="section">
+            <h2>Access Point (AP) Mode</h2>
+            <div class="checkbox-group">
+                <input type="checkbox" id="apEnabled" onchange="updateAPFields()">
+                <label for="apEnabled">Enable AP Mode Fallback</label>
+            </div>
+            <div class="input-group">
+                <label>AP SSID</label>
+                <input type="text" id="apSSID" maxlength="32">
+            </div>
+            <div class="input-group">
+                <label>AP Password (min 8 characters)</label>
+                <input type="password" id="apPassword" maxlength="63">
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div style="text-align: center;">
+            <button class="btn" onclick="saveSettings()">💾 Save Settings</button>
+            <button class="btn" onclick="saveAndReconnect()">💾 Save & Restart</button>
+            <button class="btn btn-scan" onclick="restartDevice()">🔄 Restart Device</button>
+        </div>
+
+        <div class="links">
+            <a href="/">🏠 Home</a>
+            <a href="/upload">📤 File Manager</a>
+            <a href="/wifi">📡 WiFi</a>
+        </div>
+    </div>
+
+    <script>
+        let savedWiFiNetworks = [];
+        const PROTECTED_SSID = 'Wicaksu'; // Cannot be deleted
+
+        async function loadSettings() {
+            try {
+                const response = await fetch('/api/wifi/settings');
+                const data = await response.json();
+
+                savedWiFiNetworks = data.networks || [];
+                document.getElementById('apEnabled').checked = data.apModeEnabled || false;
+                document.getElementById('apSSID').value = data.apSSID || 'SmartCDI-Config';
+                document.getElementById('apPassword').value = data.apPassword || '12345678';
+
+                updateAPFields();
+                renderSavedNetworks();
+            } catch (error) {
+                showStatus('Failed to load settings', 'error');
+            }
+        }
+
+        function isProtectedNetwork(ssid) {
+            return ssid === PROTECTED_SSID;
+        }
+
+        function renderSavedNetworks() {
+            const container = document.getElementById('savedNetworks');
+            if (savedWiFiNetworks.length === 0) {
+                container.innerHTML = '<p style="color: #7f8c8d;">No saved networks</p>';
+                return;
+            }
+
+            container.innerHTML = savedWiFiNetworks.map((net, idx) => {
+                const isProtected = isProtectedNetwork(net.ssid);
+                const protectedClass = isProtected ? 'protected' : '';
+                const protectedBadge = isProtected ? '<span class="protected-badge">🔒 PROTECTED</span>' : '';
+                const deleteBtn = isProtected
+                    ? '<button class="btn btn-delete" disabled title="Protected network cannot be deleted">🔒 Protected</button>'
+                    : `<button class="btn btn-delete" onclick="deleteNetwork(${idx})">🗑️ Delete</button>`;
+
+                return `
+                <div class="saved-network ${protectedClass}">
+                    <div>
+                        <strong>${net.ssid}</strong>${protectedBadge}<br>
+                        <small style="color: #7f8c8d;">Password: ${'*'.repeat(net.password.length)}</small>
+                    </div>
+                    ${deleteBtn}
+                </div>`;
+            }).join('');
+        }
+
+        async function scanWiFi() {
+            const resultsDiv = document.getElementById('scanResults');
+            resultsDiv.innerHTML = '<p style="color: #7f8c8d;">Scanning...</p>';
+
+            try {
+                const response = await fetch('/api/wifi/scan');
+                const data = await response.json();
+
+                if (data.count === 0) {
+                    resultsDiv.innerHTML = '<p style="color: #7f8c8d;">No networks found</p>';
+                    return;
+                }
+
+                // Show current connection info
+                let connectionInfo = '';
+                if (data.isConnected && data.currentSSID) {
+                    connectionInfo = `<div style="background:#d4edda; padding:10px; border-radius:5px; margin-bottom:10px; color:#155724;">
+                        <strong>✓ Currently connected to: ${data.currentSSID}</strong>
+                    </div>`;
+                }
+
+                resultsDiv.innerHTML = connectionInfo + data.networks.map((net, idx) => {
+                    const isConnected = net.connected || false;
+                    const bgColor = isConnected ? 'background: #d4edda;' : '';
+                    const saveBtn = isConnected
+                        ? '<span style="color:#28a745;">✓ Connected</span>'
+                        : `<button class="btn" onclick="event.stopPropagation(); quickConnect(${idx})">💾 Quick Save</button>`;
+
+                    return `
+                    <div class="network-item" style="${bgColor}" onclick="selectNetworkByIndex(${idx})">
+                        <div>
+                            <strong>${net.ssid}</strong> ${net.secure ? '🔒' : '🔓'} ${isConnected ? '✓' : ''}<br>
+                            <small style="color: #7f8c8d;">Signal: ${net.rssi} dBm</small>
+                        </div>
+                        <div>
+                            ${saveBtn}
+                        </div>
+                    </div>`;
+                }).join('');
+
+                // Store scanned networks globally for selection
+                window.scannedNetworks = data.networks;
+            } catch (error) {
+                console.error('Scan error:', error);
+                resultsDiv.innerHTML = '<p style="color: #e74c3c;">Scan failed. Please try again.</p>';
+            }
+        }
+
+        async function quickConnect(idx) {
+            if (!window.scannedNetworks || !window.scannedNetworks[idx]) return;
+            const network = window.scannedNetworks[idx];
+
+            const password = prompt(`Save "${network.ssid}"?\nEnter password (leave empty if open):\n\nNetwork will connect after restart.`);
+            if (password === null) return; // Cancelled
+
+            // Check if already exists
+            const existingNetwork = savedWiFiNetworks.find(n => n.ssid === network.ssid);
+            if (existingNetwork) {
+                showStatus(`Network "${network.ssid}" already saved!`, 'info');
+                return;
+            }
+
+            // Check max limit
+            if (savedWiFiNetworks.length >= 5) {
+                showStatus('Maximum 5 networks allowed. Please remove one first.', 'error');
+                return;
+            }
+
+            // Add to saved networks
+            savedWiFiNetworks.push({
+                ssid: network.ssid,
+                password: password || ''
+            });
+
+            showStatus('Saving network...', 'info');
+
+            try {
+                // Save settings to persist
+                await saveSettings();
+                showStatus(`✓ Network "${network.ssid}" saved! Restart device to connect.`, 'success');
+
+                // Update UI
+                renderSavedNetworks();
+            } catch (error) {
+                showStatus('Failed to save network', 'error');
+                // Remove from array if save failed
+                savedWiFiNetworks.pop();
+            }
+        }
+
+        function selectNetworkByIndex(idx) {
+            if (!window.scannedNetworks || !window.scannedNetworks[idx]) return;
+            const network = window.scannedNetworks[idx];
+            selectNetwork(network.ssid);
+        }
+
+        function selectNetwork(ssid) {
+            const password = prompt(`Enter password for "${ssid}" (leave empty if open):`);
+            if (password === null) return; // Cancelled
+
+            if (savedWiFiNetworks.length >= 5) {
+                showStatus('Maximum 5 networks allowed', 'error');
+                return;
+            }
+
+            // Check if already exists
+            if (savedWiFiNetworks.find(n => n.ssid === ssid)) {
+                showStatus('Network already saved', 'info');
+                return;
+            }
+
+            savedWiFiNetworks.push({ ssid, password });
+            renderSavedNetworks();
+            showStatus(`Added ${ssid}`, 'success');
+        }
+
+        function addNetwork() {
+            const ssid = prompt('Enter SSID:');
+            if (!ssid) return;
+
+            const password = prompt(`Enter password for "${ssid}" (leave empty if open):`);
+            if (password === null) return;
+
+            if (savedWiFiNetworks.length >= 5) {
+                showStatus('Maximum 5 networks allowed', 'error');
+                return;
+            }
+
+            savedWiFiNetworks.push({ ssid, password: password || '' });
+            renderSavedNetworks();
+            showStatus(`Added ${ssid}`, 'success');
+        }
+
+        function deleteNetwork(idx) {
+            const network = savedWiFiNetworks[idx];
+
+            // Prevent deletion of protected network
+            if (isProtectedNetwork(network.ssid)) {
+                showStatus(`Cannot delete protected network: ${network.ssid}`, 'error');
+                return;
+            }
+
+            if (confirm(`Delete ${network.ssid}?`)) {
+                savedWiFiNetworks.splice(idx, 1);
+                renderSavedNetworks();
+                showStatus('Network deleted', 'info');
+            }
+        }
+
+        function updateAPFields() {
+            const enabled = document.getElementById('apEnabled').checked;
+            document.getElementById('apSSID').disabled = !enabled;
+            document.getElementById('apPassword').disabled = !enabled;
+        }
+
+        async function saveSettings() {
+            const apSSID = document.getElementById('apSSID').value;
+            const apPassword = document.getElementById('apPassword').value;
+            const apEnabled = document.getElementById('apEnabled').checked;
+
+            if (apEnabled && apPassword.length < 8) {
+                showStatus('AP password must be at least 8 characters', 'error');
+                return;
+            }
+
+            const settings = {
+                networks: savedWiFiNetworks,
+                apModeEnabled: apEnabled,
+                apSSID: apSSID,
+                apPassword: apPassword
+            };
+
+            try {
+                const response = await fetch('/api/wifi/settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(settings)
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    showStatus(result.message || 'Settings saved!', 'success');
+                } else {
+                    showStatus(result.error || 'Save failed', 'error');
+                }
+            } catch (error) {
+                showStatus('Failed to save settings', 'error');
+            }
+        }
+
+        async function saveAndReconnect() {
+            await saveSettings();
+            setTimeout(async () => {
+                showStatus('Restarting device...', 'info');
+                await fetch('/api/wifi/reconnect', { method: 'POST' });
+            }, 1000);
+        }
+
+        async function restartDevice() {
+            if (!confirm('Restart device now? You will lose connection temporarily.')) return;
+
+            showStatus('Restarting device...', 'info');
+            try {
+                await fetch('/api/restart', { method: 'POST' });
+                setTimeout(() => {
+                    showStatus('Device restarted! Reconnecting...', 'success');
+                }, 3000);
+            } catch (error) {
+                // Connection lost is expected during restart
+                showStatus('Device is restarting...', 'info');
+            }
+        }
+
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.className = 'status ' + type;
+            statusDiv.textContent = message;
+            setTimeout(() => statusDiv.textContent = '', 5000);
+        }
+
+        // Load settings on page load
+        loadSettings();
+    </script>
+</body>
+</html>

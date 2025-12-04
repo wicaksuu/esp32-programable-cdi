@@ -1,0 +1,58 @@
+{
+  "name": "Default Optimal",
+  "isActive": true,
+  "isACMode": true,
+  "acTriggerThreshold": 2048,
+  "acInvertSignal": false,
+  "dcPulsesPerRev": 1,
+  "dcPullupEnabled": true,
+  "engineType": 0,
+  "pickupSensorOffset": 0,
+  "dwellTimeUS": 3000,
+  "revLimiterRPM": 11500,
+  "revLimiterEnabled": true,
+  "revLimiterCutPattern": 1,
+  "ignitionPointCount": 21,
+  "ignitionRPM": [
+    0, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000,
+    5500, 6000, 6500, 7000, 7500, 8000, 8500, 9000, 9500, 10000,
+    10500
+  ],
+  "ignitionAdvance": [
+    5, 8, 10, 12, 15, 18, 20, 22, 25, 28,
+    30, 32, 34, 35, 36, 36, 35, 34, 33, 32,
+    30
+  ],
+  "qsEnabled": true,
+  "qsSensorThreshold": 2048,
+  "qsSensorInvert": false,
+  "qsMinRPM": 3000,
+  "qsMaxRPM": 11500,
+  "qsPointCount": 9,
+  "qsRPM": [
+    0, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000
+  ],
+  "qsKillTime": [
+    150, 130, 120, 110, 100, 90, 80, 70, 60
+  ],
+  "lcEnabled": true,
+  "lcTargetRPM": 6000,
+  "lcRetardDegrees": 8,
+  "lcCutPattern": 1,
+  "awEnabled": true,
+  "awPitchThreshold": 20,
+  "awCutPattern": 1,
+  "awRetardDegrees": 5,
+  "tcEnabled": true,
+  "tcFrontWheelHoles": 4,
+  "tcRearWheelHoles": 4,
+  "tcSlipThreshold": 0.15,
+  "tcCutPattern": 1,
+  "tcRetardDegrees": 5,
+  "tcFrontTireWidth": 100,
+  "tcFrontTireAspect": 80,
+  "tcFrontWheelDiameter": 17,
+  "tcRearTireWidth": 120,
+  "tcRearTireAspect": 70,
+  "tcRearWheelDiameter": 17
+}

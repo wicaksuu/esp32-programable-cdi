@@ -1,0 +1,115 @@
+# Smart CDI Programmable - Git Ignore
+# Author: wicaksu
+
+# ==========================================
+# Arduino/ESP32 Build Files
+# ==========================================
+*.bin
+*.elf
+*.hex
+*.map
+build/
+*.o
+*.a
+
+# ==========================================
+# Temporary & Cache Files
+# ==========================================
+*.tmp
+*.bak
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ==========================================
+# IDE & Editor Files
+# ==========================================
+.vscode/
+.idea/
+.claude/
+*.code-workspace
+.clang_complete
+.gcc-flags.json
+
+# Arduino IDE
+*.ino.cpp
+*.ino.elf
+*.ino.bin
+*.ino.map
+
+# ==========================================
+# Platform-Specific
+# ==========================================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Linux
+.directory
+*~
+
+# ==========================================
+# Project-Specific Files
+# ==========================================
+# SD Card Data
+*.log
+logs/
+data/*.log
+
+# Map Backups
+maps/*.bak
+maps/*_backup.json
+
+# Temporary Test Files
+/tmp/*
+test_*.json
+debug_*.txt
+
+# Configuration Backups
+config_backup/
+*.old
+
+# ==========================================
+# Runtime Files
+# ==========================================
+# WiFi Credentials (if stored separately)
+wifi_credentials.txt
+secrets.h
+
+# OTA Upload Files
+firmware_*.bin
+
+# ==========================================
+# Documentation Build
+# ==========================================
+*.pdf
+*.html.bak
+
+# ==========================================
+# Dependencies (if using PlatformIO)
+# ==========================================
+.pio/
+.pioenvs/
+.piolibdeps/
+lib/
+platformio.ini.bak
+
+# ==========================================
+# Keep These Files
+# ==========================================
+!maps/default_map.json
+!maps/street_map.json
+!maps/race_map.json
+!maps/drag_map.json
+!www/*.html
+!www/*.css
+!www/*.js
