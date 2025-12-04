@@ -1886,7 +1886,7 @@ void setupWebServer() {
     }
   });
 
-  // File download handler
+  // File download handler (with chunked sending for large files >64KB)
   server.on("/download", HTTP_GET, []() {
     if (server.hasArg("path")) {
       String path = server.arg("path");
@@ -1902,7 +1902,20 @@ void setupWebServer() {
             else if (path.endsWith(".css")) contentType = "text/css";
             else if (path.endsWith(".js")) contentType = "application/javascript";
 
-            server.streamFile(file, contentType);
+            size_t fileSize = file.size();
+
+            // Send headers with content length
+            server.setContentLength(fileSize);
+            server.send(200, contentType, "");
+
+            // Send file in chunks to avoid 64KB TCP buffer limit
+            uint8_t buffer[2048];
+            while (file.available()) {
+              size_t len = file.read(buffer, sizeof(buffer));
+              server.sendContent((const char*)buffer, len);
+              yield(); // Allow WiFi stack to process
+            }
+
             file.close();
             xSemaphoreGive(sdMutex);
             return;
@@ -1948,50 +1961,64 @@ void setupWebServer() {
 
   // Serve CSS
   server.on("/style.css", HTTP_GET, []() {
-    String content = "";
-    bool fileExists = false;
-
     if (xSemaphoreTake(sdMutex, pdMS_TO_TICKS(1000)) == pdTRUE) {
       if (SD.exists("/www/style.css")) {
         File file = SD.open("/www/style.css", FILE_READ);
         if (file) {
-          content = file.readString();
+          size_t fileSize = file.size();
+
+          // Send headers with content length
+          server.setContentLength(fileSize);
+          server.send(200, "text/css", "");
+
+          // Send file in chunks to avoid 64KB TCP buffer limit
+          uint8_t buffer[2048];
+          while (file.available()) {
+            size_t len = file.read(buffer, sizeof(buffer));
+            server.sendContent((const char*)buffer, len);
+            yield(); // Allow WiFi stack to process
+          }
+
           file.close();
-          fileExists = true;
+          xSemaphoreGive(sdMutex);
+          return;
         }
       }
       xSemaphoreGive(sdMutex);
     }
 
-    if (fileExists && content.length() > 0) {
-      server.send(200, "text/css", content);
-    } else {
-      server.send(404, "text/plain", "CSS not found");
-    }
+    server.send(404, "text/plain", "CSS not found");
   });
 
-  // Serve JS
+  // Serve JS (with chunked sending for large files >64KB)
   server.on("/app.js", HTTP_GET, []() {
-    String content = "";
-    bool fileExists = false;
-
     if (xSemaphoreTake(sdMutex, pdMS_TO_TICKS(1000)) == pdTRUE) {
       if (SD.exists("/www/app.js")) {
         File file = SD.open("/www/app.js", FILE_READ);
         if (file) {
-          content = file.readString();
+          size_t fileSize = file.size();
+
+          // Send headers with content length
+          server.setContentLength(fileSize);
+          server.send(200, "application/javascript", "");
+
+          // Send file in chunks to avoid 64KB TCP buffer limit
+          uint8_t buffer[2048];
+          while (file.available()) {
+            size_t len = file.read(buffer, sizeof(buffer));
+            server.sendContent((const char*)buffer, len);
+            yield(); // Allow WiFi stack to process
+          }
+
           file.close();
-          fileExists = true;
+          xSemaphoreGive(sdMutex);
+          return;
         }
       }
       xSemaphoreGive(sdMutex);
     }
 
-    if (fileExists && content.length() > 0) {
-      server.send(200, "application/javascript", content);
-    } else {
-      server.send(404, "text/plain", "JS not found");
-    }
+    server.send(404, "text/plain", "JS not found");
   });
 
   // ===== OTA FIRMWARE UPDATE =====
