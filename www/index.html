@@ -57,6 +57,7 @@
         <button class="tab-btn" data-tab="quickshifter">🚀 QS</button>
         <button class="tab-btn" data-tab="launchcontrol">🏁 LC</button>
         <button class="tab-btn" data-tab="awtc">🛡️ AW & TC</button>
+        <button class="tab-btn" data-tab="logs">📋 Logs</button>
         <button class="tab-btn" data-tab="settings">⚙️ Setting</button>
       </nav>
 
@@ -1220,6 +1221,59 @@
           </div>
         </div>
 
+        <!-- Logs Tab -->
+        <div class="tab-content" id="logs-tab">
+          <div class="section">
+            <div class="section-header">
+              <h2>📋 System Logs</h2>
+              <div class="button-group">
+                <button class="btn btn-secondary" onclick="toggleAutoRefreshLogs()">
+                  <span id="auto-refresh-logs-btn">🔄 Auto-Refresh: OFF</span>
+                </button>
+                <button class="btn btn-primary" onclick="refreshLogs()">
+                  🔃 Refresh Now
+                </button>
+                <button class="btn btn-primary" onclick="downloadLogs()">
+                  💾 Download
+                </button>
+              </div>
+            </div>
+
+            <!-- Log Controls -->
+            <div class="form-group">
+              <label>Filter by Level:</label>
+              <select id="log-filter-level" onchange="filterLogs()">
+                <option value="ALL">📋 All Logs</option>
+                <option value="INFO">ℹ️ Info</option>
+                <option value="WARNING">⚠️ Warning</option>
+                <option value="ERROR">❌ Error</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>Number of Logs:</label>
+              <select id="log-count" onchange="refreshLogs()">
+                <option value="25">Last 25</option>
+                <option value="50" selected>Last 50</option>
+                <option value="100">Last 100</option>
+              </select>
+            </div>
+
+            <!-- Log Stats -->
+            <div class="info-box" style="background: #e8f4f8; margin-bottom: 20px;">
+              <strong>📊 Log Statistics:</strong><br>
+              <span id="log-stats">Loading...</span>
+            </div>
+
+            <!-- Log Viewer -->
+            <div class="log-viewer" id="log-viewer">
+              <div class="log-entry log-loading">
+                Loading logs...
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Settings Tab -->
         <div class="tab-content" id="settings-tab">
           <div class="section">
@@ -1331,54 +1385,107 @@
               </div>
             </div>
 
-            <div
-              class="info-box"
-              style="background: #fff5e6; border-left: 4px solid #f39c12"
-            >
-              <p><strong>📤 File Manager</strong></p>
-              <p>
-                Upload, download, dan kelola file di SD card. Backup atau
-                restore konfigurasi mapping.
-              </p>
-              <div style="margin-top: 10px">
-                <a
-                  href="/upload"
-                  class="btn btn-primary"
-                  style="
-                    display: inline-block;
-                    text-decoration: none;
-                    background: linear-gradient(
-                      135deg,
-                      #f39c12 0%,
-                      #e67e22 100%
-                    );
-                  "
-                  >📤 Buka File Manager</a
-                >
+            <!-- File Manager Section -->
+            <h3>📁 File Manager</h3>
+            <div class="section">
+              <div class="button-group" style="margin-bottom: 15px;">
+                <button class="btn btn-primary" onclick="refreshFileList()">
+                  🔃 Refresh Files
+                </button>
+                <a href="/upload" class="btn btn-secondary" style="text-decoration: none;">
+                  📤 Upload Files
+                </a>
+              </div>
+
+              <!-- File Stats -->
+              <div class="info-box" style="background: #e8f4f8; margin-bottom: 15px;">
+                <strong>📊 Storage Info:</strong><br>
+                <span id="file-stats">Loading...</span>
+              </div>
+
+              <!-- File Filter -->
+              <div class="form-group">
+                <label>Filter by Type:</label>
+                <select id="file-filter-type" onchange="filterFiles()">
+                  <option value="ALL">📋 All Files</option>
+                  <option value="map">🗺️ Maps</option>
+                  <option value="config">⚙️ Config</option>
+                  <option value="web">🌐 Web</option>
+                  <option value="log">📋 Logs</option>
+                </select>
+              </div>
+
+              <!-- File List -->
+              <div class="file-list" id="file-list">
+                <div class="file-entry file-loading">
+                  Loading files...
+                </div>
               </div>
             </div>
 
-            <div
-              class="info-box"
-              style="background: #baa9ec; border-left: 4px solid #a184dc"
-            >
-              <p><strong>📊 Simulator</strong></p>
-              <p>Melakukan simulasi tanpa mesin, digunakan untuk dev only</p>
-              <div style="margin-top: 10px">
-                <a
-                  href="/simulator"
-                  class="btn btn-primary"
-                  style="
-                    display: inline-block;
-                    text-decoration: none;
-                    background: linear-gradient(
-                      135deg,
-                      #edb9f3 0%,
-                      #7304c2 100%
-                    );
-                  "
-                  >📊 Buka Simulator</a
-                >
+            <!-- Simulator Controls Section -->
+            <h3>🎮 Simulator Controls</h3>
+            <div class="section">
+              <div class="info-box" style="background: #fff3cd; border-left: 4px solid #ffc107; margin-bottom: 15px;">
+                <strong>⚠️ Development Mode Only</strong><br>
+                Simulator untuk testing tanpa mesin. Jangan gunakan saat engine running!
+              </div>
+
+              <!-- Simulator Status -->
+              <div class="form-group">
+                <label>Simulator Status:</label>
+                <div id="sim-status-display" class="info-box" style="background: #f8f9fa;">
+                  <strong>Status:</strong> <span id="sim-enabled-status">Loading...</span><br>
+                  <strong>Running:</strong> <span id="sim-running-status">-</span><br>
+                  <strong>Virtual RPM:</strong> <span id="sim-virtual-rpm">0</span>
+                </div>
+              </div>
+
+              <!-- Simulator Controls -->
+              <div class="form-row">
+                <div class="form-group">
+                  <button id="sim-toggle-btn" class="btn btn-secondary" onclick="toggleSimulator()">
+                    🎮 Enable Simulator
+                  </button>
+                </div>
+                <div class="form-group">
+                  <button id="sim-start-btn" class="btn btn-primary" onclick="startSimulator()" disabled>
+                    ▶️ Start Engine
+                  </button>
+                </div>
+                <div class="form-group">
+                  <button id="sim-stop-btn" class="btn btn-danger" onclick="stopSimulator()" disabled>
+                    ⏹️ Stop Engine
+                  </button>
+                </div>
+              </div>
+
+              <!-- Virtual RPM Control -->
+              <div class="form-group">
+                <label>Virtual RPM:</label>
+                <input type="range" id="sim-rpm-slider" min="0" max="15000" step="100" value="3000" oninput="updateSimRPMDisplay()" disabled>
+                <span id="sim-rpm-value">3000</span> RPM
+              </div>
+
+              <!-- Virtual Inputs -->
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Virtual Speed (km/h):</label>
+                  <input type="number" id="sim-speed" min="0" max="300" value="0" disabled>
+                </div>
+                <div class="form-group">
+                  <label>Clutch Pulled:</label>
+                  <input type="checkbox" id="sim-clutch" disabled>
+                </div>
+              </div>
+
+              <div class="button-group">
+                <button class="btn btn-primary" onclick="applySimulatorInputs()" id="sim-apply-btn" disabled>
+                  ✓ Apply Inputs
+                </button>
+                <a href="/simulator" class="btn btn-secondary" style="text-decoration: none;">
+                  🔧 Advanced Simulator
+                </a>
               </div>
             </div>
 

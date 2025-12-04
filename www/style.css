@@ -977,3 +977,251 @@ body {
         padding: 8px 15px;
     }
 }
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+/* 📋 LOG VIEWER STYLES */
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+.log-viewer {
+    background: #1a1a2e;
+    border: 1px solid #3498db;
+    border-radius: 8px;
+    padding: 15px;
+    max-height: 500px;
+    overflow-y: auto;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+.log-entry {
+    padding: 8px 12px;
+    margin-bottom: 4px;
+    border-radius: 4px;
+    border-left: 4px solid transparent;
+    background: rgba(255, 255, 255, 0.05);
+    transition: all 0.2s ease;
+}
+
+.log-entry:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateX(2px);
+}
+
+.log-entry.log-info {
+    border-left-color: #3498db;
+    color: #ecf0f1;
+}
+
+.log-entry.log-warning {
+    border-left-color: #f39c12;
+    color: #f39c12;
+    background: rgba(243, 156, 18, 0.1);
+}
+
+.log-entry.log-error {
+    border-left-color: #e74c3c;
+    color: #e74c3c;
+    background: rgba(231, 76, 60, 0.15);
+    font-weight: bold;
+}
+
+.log-entry.log-loading {
+    text-align: center;
+    color: #95a5a6;
+    font-style: italic;
+    border-left-color: #95a5a6;
+}
+
+.log-timestamp {
+    color: #7f8c8d;
+    font-size: 11px;
+    margin-right: 8px;
+}
+
+.log-level {
+    font-weight: bold;
+    margin-right: 8px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 11px;
+}
+
+.log-level.level-info {
+    background: rgba(52, 152, 219, 0.3);
+    color: #3498db;
+}
+
+.log-level.level-warning {
+    background: rgba(243, 156, 18, 0.3);
+    color: #f39c12;
+}
+
+.log-level.level-error {
+    background: rgba(231, 76, 60, 0.3);
+    color: #e74c3c;
+}
+
+.log-message {
+    color: #ecf0f1;
+}
+
+/* Scrollbar styling for log viewer */
+.log-viewer::-webkit-scrollbar {
+    width: 8px;
+}
+
+.log-viewer::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+}
+
+.log-viewer::-webkit-scrollbar-thumb {
+    background: #3498db;
+    border-radius: 4px;
+}
+
+.log-viewer::-webkit-scrollbar-thumb:hover {
+    background: #2980b9;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+/* 📁 FILE MANAGER STYLES */
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+.file-list {
+    background: #1a1a2e;
+    border: 1px solid #3498db;
+    border-radius: 8px;
+    padding: 15px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.file-entry {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    margin-bottom: 8px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.05);
+    border-left: 4px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.file-entry:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateX(2px);
+}
+
+.file-entry.file-map {
+    border-left-color: #3498db;
+}
+
+.file-entry.file-config {
+    border-left-color: #2ecc71;
+}
+
+.file-entry.file-web {
+    border-left-color: #f39c12;
+}
+
+.file-entry.file-log {
+    border-left-color: #95a5a6;
+}
+
+.file-entry.file-loading {
+    text-align: center;
+    color: #95a5a6;
+    font-style: italic;
+    border-left-color: #95a5a6;
+    justify-content: center;
+}
+
+.file-info {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.file-name {
+    font-weight: bold;
+    color: #ecf0f1;
+    margin-bottom: 4px;
+    font-family: 'Courier New', monospace;
+}
+
+.file-meta {
+    font-size: 11px;
+    color: #7f8c8d;
+}
+
+.file-type-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: bold;
+    margin-right: 8px;
+}
+
+.file-type-badge.type-map {
+    background: rgba(52, 152, 219, 0.3);
+    color: #3498db;
+}
+
+.file-type-badge.type-config {
+    background: rgba(46, 204, 113, 0.3);
+    color: #2ecc71;
+}
+
+.file-type-badge.type-web {
+    background: rgba(243, 156, 18, 0.3);
+    color: #f39c12;
+}
+
+.file-type-badge.type-log {
+    background: rgba(149, 165, 166, 0.3);
+    color: #95a5a6;
+}
+
+.file-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.file-actions button {
+    padding: 6px 12px;
+    font-size: 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.file-actions .btn-download {
+    background: #3498db;
+    color: white;
+}
+
+.file-actions .btn-download:hover {
+    background: #2980b9;
+}
+
+/* Scrollbar for file list */
+.file-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.file-list::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+}
+
+.file-list::-webkit-scrollbar-thumb {
+    background: #3498db;
+    border-radius: 4px;
+}
+
+.file-list::-webkit-scrollbar-thumb:hover {
+    background: #2980b9;
+}

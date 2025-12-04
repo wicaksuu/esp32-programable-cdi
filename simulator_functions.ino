@@ -224,81 +224,156 @@ void runSimulatorScenario(String scenario) {
   Serial.println("========================================");
 
   if (scenario == "idle") {
-    // Test 1: Idle State
+    // Test 1: Idle State - REALISTIC
     sim.virtualRPM = 1500;
     sim.virtualThrottle = 5;
     sim.virtualClutch = false;
     sim.virtualSpeed = 0;
     sim.virtualPitch = 0;
     sim.virtualSlip = 0;
-    Serial.println("✓ Idle: RPM should be ~1500, advance ~5-10°");
+    Serial.println("✓ Idle: RPM=1500, throttle=5%, neutral, advance ~5-10°");
 
   } else if (scenario == "accel") {
-    // Test 2: Acceleration Sweep
+    // Test 2: Acceleration Sweep - REALISTIC (faster sweep)
     sim.autoRun = true;
     sim.autoTargetRPM = 12000;
-    sim.autoRPMStep = 200;  // Fast sweep
-    sim.virtualThrottle = 80;
-    Serial.println("✓ Accel: RPM sweeps 1000→12000, advance should increase progressively");
+    sim.autoRPMStep = 500;  // FASTER sweep (more realistic acceleration)
+    sim.virtualRPM = 2000;  // Start from low RPM (not 0)
+    sim.virtualThrottle = 85;
+    sim.virtualSpeed = 20.0;  // Rolling start
+    sim.virtualClutch = false;  // Clutch released (in gear)
+    Serial.println("✓ Acceleration: RPM sweeps 2000→12000 (realistic WOT pull)");
+    Serial.println("  Expected: Progressive advance increase through powerband");
 
   } else if (scenario == "revlimit") {
-    // Test 3: Rev Limiter
+    // Test 3: Rev Limiter - REALISTIC
     Mapping* map = &mappings[currentMapIndex];
-    sim.virtualRPM = map->revLimiterRPM + 100; // Exceed limit
-    sim.virtualThrottle = 100;
-    Serial.printf("✓ Rev Limit: RPM=%d (limit=%d), should cut spark with pattern\n",
+    sim.virtualRPM = map->revLimiterRPM + 100; // Exceed limit by 100 RPM
+    sim.virtualThrottle = 100;  // Full throttle
+    sim.virtualSpeed = 80.0;    // High speed context
+    sim.virtualClutch = false;
+    Serial.printf("✓ Rev Limiter: RPM=%d (limit=%d), WOT, should cut spark\n",
                   sim.virtualRPM, map->revLimiterRPM);
+    Serial.printf("  Cut pattern: %d\n", map->revLimiterCutPattern);
 
   } else if (scenario == "quickshift") {
-    // Test 4: Quick Shifter
+    // Test 4: Quick Shifter - REALISTIC (with speed & proper hold time)
     Mapping* map = &mappings[currentMapIndex];
-    sim.virtualRPM = 8000;  // Mid-range
+    sim.virtualRPM = 6000;  // Lower RPM for safer shift
+    sim.virtualThrottle = 80;  // High throttle (mid-shift)
+    sim.virtualSpeed = 45.0;  // Realistic speed for QS usage
+    sim.virtualClutch = false;  // Clutchless shift
     sim.virtualQSPressed = true;
-    sim.virtualQSPressure = map->qsMap.sensorThreshold + 500; // Trigger threshold
-    Serial.println("✓ QS: Simulating shift at 8000 RPM, spark should cut for ~80ms");
+    sim.virtualQSPressure = map->qsMap.sensorThreshold + 800; // Strong pressure
+    Serial.println("✓ Quick Shift: RPM=6000, speed=45 km/h, clutchless upshift");
+    Serial.println("  Expected: Spark cut for kill time (~100ms), smooth shift");
 
-    // Auto-release after kill time
-    delay(100);
+    // Hold shifter longer (realistic rider behavior)
+    delay(250);  // 250ms hold (rider reaction time)
     sim.virtualQSPressed = false;
     sim.virtualQSPressure = map->qsMap.sensorThreshold - 500;
+    Serial.println("  Shifter released, ignition should resume");
 
   } else if (scenario == "launch") {
-    // Test 5: Launch Control
+    // Test 5: Launch Control - REALISTIC (multi-phase)
     Mapping* map = &mappings[currentMapIndex];
+
+    // PHASE 1: Build RPM (clutch pulled, stationary)
+    Serial.println("✓ Launch Control - PHASE 1: Building RPM");
     sim.virtualRPM = map->launchControl.targetRPM;
-    sim.virtualClutch = true;  // Pulled
-    sim.virtualSpeed = 2.0;    // Low speed (<5 km/h)
-    sim.virtualThrottle = 100;
-    Serial.printf("✓ Launch Control: RPM=%d, clutch pulled, speed<5 km/h, should activate LC\n",
-                  sim.virtualRPM);
+    sim.virtualClutch = true;   // Clutch pulled
+    sim.virtualSpeed = 0.0;     // Stationary
+    sim.virtualThrottle = 100;  // Full throttle
+    Serial.printf("  RPM held at %d, clutch pulled, LC should activate\n",
+                  map->launchControl.targetRPM);
+    delay(1000);  // Hold for 1 second
+
+    // PHASE 2: Clutch drop (simulate launch)
+    Serial.println("  PHASE 2: Clutch drop - LAUNCHING!");
+    sim.virtualClutch = false;  // Drop clutch
+    sim.virtualSpeed = 8.0;     // Initial acceleration
+    sim.virtualRPM = map->launchControl.targetRPM - 800;  // RPM dip on launch
+    delay(500);
+
+    // PHASE 3: Accelerating away
+    Serial.println("  PHASE 3: Accelerating, LC should disengage");
+    sim.virtualSpeed = 18.0;    // Speed > 5 km/h, LC disengages
+    sim.virtualRPM = 7500;      // Building RPM
+    Serial.println("  Launch complete!");
 
   } else if (scenario == "wheelie") {
-    // Test 6: Anti-Wheelie
+    // Test 6: Anti-Wheelie - REALISTIC (gradual pitch increase)
     Mapping* map = &mappings[currentMapIndex];
-    sim.virtualRPM = 7000;
-    sim.virtualPitch = baselinePitch + map->antiWheelie.pitchThreshold + 5.0; // Exceed threshold
-    sim.virtualSpeed = 60.0;
-    Serial.printf("✓ Anti-Wheelie: Pitch=%.1f° (threshold=%.1f°), should retard timing\n",
-                  sim.virtualPitch, map->antiWheelie.pitchThreshold);
+
+    Serial.println("✓ Anti-Wheelie: Simulating wheelie during acceleration");
+    sim.virtualRPM = 8000;      // Power RPM
+    sim.virtualSpeed = 50.0;    // Mid-speed
+    sim.virtualThrottle = 90;   // High throttle (causing wheelie)
+    sim.virtualClutch = false;
+
+    // Gradual pitch increase (realistic wheelie development)
+    Serial.println("  Front wheel lifting...");
+    for (float p = 0; p <= map->antiWheelie.pitchThreshold + 8.0; p += 3.0) {
+      sim.virtualPitch = baselinePitch + p;
+      Serial.printf("  Pitch: %.1f° ", sim.virtualPitch);
+      if (p > map->antiWheelie.pitchThreshold) {
+        Serial.println("← AW SHOULD ACTIVATE!");
+      } else {
+        Serial.println();
+      }
+      delay(200);  // Smooth pitch increase
+    }
+    Serial.println("  Expected: Timing retard when pitch exceeds threshold");
 
   } else if (scenario == "traction") {
-    // Test 7: Traction Control
+    // Test 7: Traction Control - REALISTIC (proper slip calculation)
     Mapping* map = &mappings[currentMapIndex];
-    sim.virtualRPM = 9000;
-    sim.virtualSpeed = 40.0;
-    sim.virtualSlip = map->tractionControl.slipThreshold + 0.1; // 25% slip (exceeds 15% threshold)
-    Serial.printf("✓ Traction Control: Front=%.1f km/h, Rear=%.1f km/h, slip=%.0f%%, should intervene\n",
-                  sim.virtualSpeed,
-                  sim.virtualSpeed * (1.0 + sim.virtualSlip),
-                  sim.virtualSlip * 100);
+
+    Serial.println("✓ Traction Control: Simulating rear wheel slip");
+    sim.virtualRPM = 9000;      // High RPM
+    sim.virtualThrottle = 85;   // High throttle causes slip
+    sim.virtualSpeed = 45.0;    // Front wheel speed
+
+    // Realistic slip ratio (18-20% instead of 25%)
+    float slipRatio = map->tractionControl.slipThreshold + 0.05;  // Slight exceed
+    sim.virtualSlip = slipRatio;
+    float rearSpeed = sim.virtualSpeed * (1.0 + slipRatio);
+
+    Serial.printf("  Front: %.1f km/h, Rear: %.1f km/h\n",
+                  sim.virtualSpeed, rearSpeed);
+    Serial.printf("  Slip: %.1f%% (threshold: %.1f%%)\n",
+                  slipRatio * 100, map->tractionControl.slipThreshold * 100);
+    Serial.println("  Expected: TC intervention (timing retard)");
 
   } else if (scenario == "2stroke_powerband") {
-    // Test 8: 2-Stroke Powerband Test
+    // Test 8: 2-Stroke Powerband - REALISTIC (dynamic step for powerband surge)
+    Serial.println("✓ 2-Stroke Powerband: Realistic powerband surge simulation");
+
     sim.autoRun = true;
-    sim.autoTargetRPM = 14000;  // 2-stroke rev higher!
-    sim.autoRPMStep = 300;
-    Serial.println("✓ 2-Stroke Powerband: Sweeping through powerband range");
-    Serial.println("  Expected: Sharp advance increase at powerband RPM");
+    sim.autoTargetRPM = 13000;  // 2-stroke redline
+    sim.virtualRPM = 1500;      // Start from idle (not 0!)
+    sim.virtualThrottle = 40;   // Part throttle initially
+    sim.virtualSpeed = 15.0;    // Rolling
+    sim.virtualClutch = false;
+
+    // Variable step rate to simulate powerband characteristics
+    // Below powerband: Slow climb
+    // In powerband (6500-8500): FAST surge!
+    // Above powerband: Moderate
+    if (sim.virtualRPM < 6000) {
+      sim.autoRPMStep = 250;  // Slow below powerband
+    } else if (sim.virtualRPM >= 6000 && sim.virtualRPM < 9000) {
+      sim.autoRPMStep = 1000;  // FAST in powerband! (2-stroke surge)
+      sim.virtualThrottle = 95;  // Full throttle in powerband
+    } else {
+      sim.autoRPMStep = 400;  // Moderate above powerband
+    }
+
+    Serial.println("  Expected behavior:");
+    Serial.println("  - Slow climb below 6000 RPM");
+    Serial.println("  - SHARP SURGE 6000-9000 RPM (powerband!)");
+    Serial.println("  - Moderate climb to redline");
+    Serial.println("  - Advance should increase sharply in powerband");
 
   } else {
     Serial.printf("⚠️  Unknown scenario: %s\n", scenario.c_str());

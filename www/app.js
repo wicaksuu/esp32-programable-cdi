@@ -1681,3 +1681,407 @@ if (event.target == modal) {
 closeModal();
 }
 }
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 📋 LOG VIEWER FUNCTIONS
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+let allLogs = [];
+let autoRefreshLogsEnabled = false;
+let logsRefreshInterval = null;
+
+// Fetch and display logs
+async function refreshLogs() {
+  try {
+    const count = document.getElementById('log-count').value;
+    const response = await fetch(`/api/logs?count=${count}`);
+    const data = await response.json();
+
+    allLogs = data.logs || [];
+
+    // Update stats
+    const stats = `Total: ${data.totalLogs || 0} | Ring Buffer: ${data.bufferLogs || 0}/${data.bufferSize || 0} | Dropped: ${data.droppedLogs || 0}`;
+    document.getElementById('log-stats').textContent = stats;
+
+    // Display logs
+    filterLogs();
+
+  } catch (error) {
+    console.error('Failed to fetch logs:', error);
+    document.getElementById('log-viewer').innerHTML =
+      '<div class="log-entry log-error">❌ Failed to load logs</div>';
+  }
+}
+
+// Filter logs by level
+function filterLogs() {
+  const filterLevel = document.getElementById('log-filter-level').value;
+  const logViewer = document.getElementById('log-viewer');
+
+  if (allLogs.length === 0) {
+    logViewer.innerHTML = '<div class="log-entry log-loading">No logs available</div>';
+    return;
+  }
+
+  // Filter logs
+  let filteredLogs = allLogs;
+  if (filterLevel !== 'ALL') {
+    filteredLogs = allLogs.filter(log => log.level === filterLevel);
+  }
+
+  if (filteredLogs.length === 0) {
+    logViewer.innerHTML = `<div class="log-entry log-loading">No ${filterLevel} logs found</div>`;
+    return;
+  }
+
+  // Display logs (newest first)
+  let html = '';
+  for (let i = filteredLogs.length - 1; i >= 0; i--) {
+    const log = filteredLogs[i];
+    const levelClass = log.level.toLowerCase();
+    const levelBadge = log.level === 'INFO' ? 'ℹ️' :
+                      log.level === 'WARNING' ? '⚠️' : '❌';
+
+    html += `
+      <div class="log-entry log-${levelClass}">
+        <span class="log-timestamp">[${log.timestamp || 'N/A'}]</span>
+        <span class="log-level level-${levelClass}">${levelBadge} ${log.level}</span>
+        <span class="log-message">${log.message || ''}</span>
+      </div>
+    `;
+  }
+
+  logViewer.innerHTML = html;
+
+  // Auto-scroll to bottom (newest logs)
+  logViewer.scrollTop = 0;
+}
+
+// Toggle auto-refresh for logs
+function toggleAutoRefreshLogs() {
+  autoRefreshLogsEnabled = !autoRefreshLogsEnabled;
+  const btn = document.getElementById('auto-refresh-logs-btn');
+
+  if (autoRefreshLogsEnabled) {
+    btn.textContent = '🔄 Auto-Refresh: ON';
+    btn.parentElement.classList.add('btn-primary');
+    btn.parentElement.classList.remove('btn-secondary');
+
+    // Refresh immediately
+    refreshLogs();
+
+    // Start interval (every 3 seconds)
+    logsRefreshInterval = setInterval(refreshLogs, 3000);
+  } else {
+    btn.textContent = '🔄 Auto-Refresh: OFF';
+    btn.parentElement.classList.remove('btn-primary');
+    btn.parentElement.classList.add('btn-secondary');
+
+    // Stop interval
+    if (logsRefreshInterval) {
+      clearInterval(logsRefreshInterval);
+      logsRefreshInterval = null;
+    }
+  }
+}
+
+// Download logs as file
+async function downloadLogs() {
+  try {
+    const response = await fetch('/api/logs/download');
+    const blob = await response.blob();
+
+    // Create download link
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `cdi_logs_${Date.now()}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+
+    showToast('✅ Logs downloaded successfully', 'success');
+  } catch (error) {
+    console.error('Failed to download logs:', error);
+    showToast('❌ Failed to download logs', 'error');
+  }
+}
+
+// Load logs when logs tab is opened
+document.addEventListener('DOMContentLoaded', function() {
+  // Add event listener for tab changes
+  const tabButtons = document.querySelectorAll('.tab-btn');
+  tabButtons.forEach(btn => {
+    btn.addEventListener('click', function() {
+      const tab = this.getAttribute('data-tab');
+      if (tab === 'logs') {
+        // Load logs when logs tab is opened
+        refreshLogs();
+      } else if (tab === 'settings') {
+        // Load file list and simulator status when settings tab is opened
+        refreshFileList();
+        refreshSimulatorStatus();
+      }
+    });
+  });
+});
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 📁 FILE MANAGER FUNCTIONS
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+let allFiles = [];
+
+// Fetch and display file list
+async function refreshFileList() {
+  try {
+    const response = await fetch('/api/files');
+    const data = await response.json();
+
+    allFiles = data.files || [];
+
+    // Update stats
+    const totalFiles = allFiles.length;
+    const totalSize = allFiles.reduce((sum, file) => sum + (file.size || 0), 0);
+    const stats = `Total Files: ${totalFiles} | Total Size: ${formatBytes(totalSize)}`;
+    document.getElementById('file-stats').textContent = stats;
+
+    // Display files
+    filterFiles();
+
+  } catch (error) {
+    console.error('Failed to fetch files:', error);
+    document.getElementById('file-list').innerHTML =
+      '<div class="file-entry file-loading">❌ Failed to load files</div>';
+  }
+}
+
+// Filter files by type
+function filterFiles() {
+  const filterType = document.getElementById('file-filter-type').value;
+  const fileList = document.getElementById('file-list');
+
+  if (allFiles.length === 0) {
+    fileList.innerHTML = '<div class="file-entry file-loading">No files found</div>';
+    return;
+  }
+
+  // Filter files
+  let filteredFiles = allFiles;
+  if (filterType !== 'ALL') {
+    filteredFiles = allFiles.filter(file => file.type === filterType);
+  }
+
+  if (filteredFiles.length === 0) {
+    fileList.innerHTML = `<div class="file-entry file-loading">No ${filterType} files found</div>`;
+    return;
+  }
+
+  // Display files
+  let html = '';
+  filteredFiles.forEach(file => {
+    const typeClass = `file-${file.type}`;
+    const typeIcon = file.type === 'map' ? '🗺️' :
+                    file.type === 'config' ? '⚙️' :
+                    file.type === 'web' ? '🌐' : '📋';
+
+    html += `
+      <div class="file-entry ${typeClass}">
+        <div class="file-info">
+          <div class="file-name">${typeIcon} ${file.name}</div>
+          <div class="file-meta">
+            <span class="file-type-badge type-${file.type}">${file.type.toUpperCase()}</span>
+            ${formatBytes(file.size)} • ${file.path}
+          </div>
+        </div>
+        <div class="file-actions">
+          <button class="btn-download" onclick="downloadFile('${file.path}', '${file.name}')">
+            💾 Download
+          </button>
+        </div>
+      </div>
+    `;
+  });
+
+  fileList.innerHTML = html;
+}
+
+// Download file
+function downloadFile(path, filename) {
+  const link = document.createElement('a');
+  link.href = '/download?path=' + encodeURIComponent(path);
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  showToast('💾 Downloading: ' + filename, 'success');
+}
+
+// Format bytes to human readable
+function formatBytes(bytes) {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 🎮 SIMULATOR CONTROL FUNCTIONS
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+let simulatorEnabled = false;
+let simulatorRunning = false;
+
+// Refresh simulator status
+async function refreshSimulatorStatus() {
+  try {
+    const response = await fetch('/api/simulator');
+    const data = await response.json();
+
+    simulatorEnabled = data.enabled || false;
+    simulatorRunning = data.running || false;
+
+    // Update UI
+    document.getElementById('sim-enabled-status').textContent = simulatorEnabled ? '✅ Enabled' : '❌ Disabled';
+    document.getElementById('sim-running-status').textContent = simulatorRunning ? '▶️ Running' : '⏹️ Stopped';
+    document.getElementById('sim-virtual-rpm').textContent = data.virtualRPM || 0;
+
+    // Update button states
+    const toggleBtn = document.getElementById('sim-toggle-btn');
+    const startBtn = document.getElementById('sim-start-btn');
+    const stopBtn = document.getElementById('sim-stop-btn');
+    const rpmSlider = document.getElementById('sim-rpm-slider');
+    const speedInput = document.getElementById('sim-speed');
+    const clutchInput = document.getElementById('sim-clutch');
+    const applyBtn = document.getElementById('sim-apply-btn');
+
+    if (simulatorEnabled) {
+      toggleBtn.textContent = '🎮 Disable Simulator';
+      toggleBtn.classList.remove('btn-secondary');
+      toggleBtn.classList.add('btn-danger');
+
+      startBtn.disabled = simulatorRunning;
+      stopBtn.disabled = !simulatorRunning;
+      rpmSlider.disabled = false;
+      speedInput.disabled = false;
+      clutchInput.disabled = false;
+      applyBtn.disabled = false;
+    } else {
+      toggleBtn.textContent = '🎮 Enable Simulator';
+      toggleBtn.classList.remove('btn-danger');
+      toggleBtn.classList.add('btn-secondary');
+
+      startBtn.disabled = true;
+      stopBtn.disabled = true;
+      rpmSlider.disabled = true;
+      speedInput.disabled = true;
+      clutchInput.disabled = true;
+      applyBtn.disabled = true;
+    }
+
+    // Update virtual inputs
+    if (data.virtualSpeed !== undefined) {
+      speedInput.value = data.virtualSpeed;
+    }
+    if (data.clutchPulled !== undefined) {
+      clutchInput.checked = data.clutchPulled;
+    }
+
+  } catch (error) {
+    console.error('Failed to fetch simulator status:', error);
+    document.getElementById('sim-enabled-status').textContent = '❌ Error';
+  }
+}
+
+// Toggle simulator on/off
+async function toggleSimulator() {
+  try {
+    const action = simulatorEnabled ? 'disable' : 'enable';
+    const response = await fetch(`/api/simulator?action=${action}`, { method: 'POST' });
+    const data = await response.json();
+
+    if (data.success) {
+      showToast(`✅ Simulator ${action}d`, 'success');
+      await refreshSimulatorStatus();
+    } else {
+      showToast('❌ Failed to toggle simulator', 'error');
+    }
+  } catch (error) {
+    console.error('Failed to toggle simulator:', error);
+    showToast('❌ Error toggling simulator', 'error');
+  }
+}
+
+// Start simulator
+async function startSimulator() {
+  try {
+    const rpm = document.getElementById('sim-rpm-slider').value;
+    const response = await fetch(`/api/simulator?action=start&rpm=${rpm}`, { method: 'POST' });
+    const data = await response.json();
+
+    if (data.success) {
+      showToast(`✅ Simulator started at ${rpm} RPM`, 'success');
+      await refreshSimulatorStatus();
+    } else {
+      showToast('❌ Failed to start simulator', 'error');
+    }
+  } catch (error) {
+    console.error('Failed to start simulator:', error);
+    showToast('❌ Error starting simulator', 'error');
+  }
+}
+
+// Stop simulator
+async function stopSimulator() {
+  try {
+    const response = await fetch('/api/simulator?action=stop', { method: 'POST' });
+    const data = await response.json();
+
+    if (data.success) {
+      showToast('⏹️ Simulator stopped', 'success');
+      await refreshSimulatorStatus();
+    } else {
+      showToast('❌ Failed to stop simulator', 'error');
+    }
+  } catch (error) {
+    console.error('Failed to stop simulator:', error);
+    showToast('❌ Error stopping simulator', 'error');
+  }
+}
+
+// Update RPM display
+function updateSimRPMDisplay() {
+  const value = document.getElementById('sim-rpm-slider').value;
+  document.getElementById('sim-rpm-value').textContent = value;
+}
+
+// Apply simulator virtual inputs
+async function applySimulatorInputs() {
+  try {
+    const speed = document.getElementById('sim-speed').value;
+    const clutch = document.getElementById('sim-clutch').checked;
+
+    const response = await fetch('/api/simulator?action=setInputs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        speed: parseInt(speed),
+        clutchPulled: clutch
+      })
+    });
+
+    const data = await response.json();
+
+    if (data.success) {
+      showToast('✅ Virtual inputs applied', 'success');
+      await refreshSimulatorStatus();
+    } else {
+      showToast('❌ Failed to apply inputs', 'error');
+    }
+  } catch (error) {
+    console.error('Failed to apply inputs:', error);
+    showToast('❌ Error applying inputs', 'error');
+  }
+}
